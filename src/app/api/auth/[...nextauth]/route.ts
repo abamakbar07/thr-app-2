@@ -60,8 +60,10 @@ const handler = NextAuth({
     },
   },
   pages: {
-    signIn: '/auth/signin',
-    error: '/auth/error',
+    signIn: '/signin',
+    signOut: '/signin',
+    error: '/signin',
+    newUser: '/admin/dashboard',
   },
 });
 

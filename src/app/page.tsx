@@ -27,7 +27,7 @@ export default function Home() {
             </div>
             <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
               <Link 
-                href="/auth/signin" 
+                href="/signin" 
                 className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-emerald-600 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10"
               >
                 Admin Login
@@ -90,7 +90,7 @@ export default function Home() {
               </p>
               <div className="mt-6">
                 <Link 
-                  href="/auth/signin" 
+                  href="/signin" 
                   className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-emerald-700 bg-white hover:bg-emerald-50 shadow-sm"
                 >
                   Get Started
@@ -103,6 +103,28 @@ export default function Home() {
       
       <footer className="bg-white">
         <div className="max-w-7xl mx-auto py-12 px-4 overflow-hidden sm:px-6 lg:px-8">
+          <nav className="-mx-5 -my-2 flex flex-wrap justify-center">
+            <div className="px-5 py-2">
+              <Link href="/" className="text-base text-gray-500 hover:text-gray-900">
+                Home
+              </Link>
+            </div>
+            <div className="px-5 py-2">
+              <Link href="/join" className="text-base text-gray-500 hover:text-gray-900">
+                Join Game
+              </Link>
+            </div>
+            <div className="px-5 py-2">
+              <Link href="/signin" className="text-base text-gray-500 hover:text-gray-900">
+                Admin Login
+              </Link>
+            </div>
+            <div className="px-5 py-2">
+              <Link href="/signup" className="text-base text-gray-500 hover:text-gray-900">
+                Create Account
+              </Link>
+            </div>
+          </nav>
           <p className="mt-8 text-center text-base text-gray-400">
             &copy; {new Date().getFullYear()} Islamic Trivia THR App. All rights reserved.
           </p>

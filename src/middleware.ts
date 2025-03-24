@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { authOptions } from '@/lib/auth/authOptions';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // Get the token
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  const token = await getToken({ 
+    req: request, 
+    secret: authOptions.secret || process.env.NEXTAUTH_SECRET 
+  });
   
   // Check if pathname is a protected route
   const isProtectedRoute = pathname === '/dashboard' || 
+                          pathname.startsWith('/dashboard/') ||
                           pathname.startsWith('/rooms') || 
                           pathname.startsWith('/questions') || 
                           pathname.startsWith('/participants') || 

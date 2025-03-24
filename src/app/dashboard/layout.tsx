@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth/session';
 import AdminNav from '@/components/admin/AdminNav';
+import SignOutButton from '@/components/admin/SignOutButton';
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard - Islamic Trivia THR App',
@@ -35,12 +36,7 @@ export default async function DashboardLayout({
             <div className="flex items-center">
               <div className="ml-3 relative flex items-center space-x-4">
                 <span>{session.user.name}</span>
-                <Link
-                  href="/api/auth/signout"
-                  className="text-white hover:bg-indigo-500 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Sign out
-                </Link>
+                <SignOutButton />
               </div>
             </div>
           </div>

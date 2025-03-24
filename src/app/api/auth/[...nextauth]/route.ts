@@ -44,17 +44,30 @@ const handler = NextAuth({
   ],
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
+    async jwt({ token, user, account }) {
+      if (account && user) {
+        // console.log('JWT callback - User sign in:', { userId: user.id, name: user.name });
+        return {
+          ...token,
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        };
       }
+      
+      // console.log('JWT Token:', JSON.stringify(token));
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
+      if (session.user && token) {
+        session.user.id = token.id;
+        session.user.name = token.name || '';
+        session.user.email = token.email || '';
+        
+        // console.log('Session after callback:', JSON.stringify(session));
       }
       return session;
     },
@@ -65,6 +78,7 @@ const handler = NextAuth({
     error: '/signin',
     newUser: '/dashboard',
   },
+  debug: process.env.NODE_ENV === 'development',
 });
 
 export { handler as GET, handler as POST }; 

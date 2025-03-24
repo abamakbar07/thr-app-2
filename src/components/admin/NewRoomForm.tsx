@@ -46,15 +46,17 @@ export default function NewRoomForm() {
         body: JSON.stringify(formData),
       });
       
+      const data = await response.json();
+      
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || 'Failed to create room');
       }
       
-      const data = await response.json();
+      // Successfully created the room
       router.push('/dashboard/rooms');
       router.refresh();
     } catch (err) {
+      console.error('Error creating room:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setIsLoading(false);

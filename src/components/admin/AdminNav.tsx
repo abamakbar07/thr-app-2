@@ -5,10 +5,10 @@ import Link from 'next/link';
 
 const navItems = [
   { name: 'Dashboard', href: '/dashboard' },
-  { name: 'Game Rooms', href: '/rooms' },
-  { name: 'Questions', href: '/questions' },
-  { name: 'Participants', href: '/participants' },
-  { name: 'Rewards', href: '/rewards' },
+  { name: 'Game Rooms', href: '/dashboard/rooms' },
+  { name: 'Questions', href: '/dashboard/questions' },
+  { name: 'Participants', href: '/dashboard/participants' },
+  { name: 'Rewards', href: '/dashboard/rewards' },
 ];
 
 export default function AdminNav() {
@@ -18,7 +18,8 @@ export default function AdminNav() {
     <aside className="w-64 bg-white shadow-sm rounded-lg mr-6 p-4">
       <nav className="space-y-1">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || 
+                           (pathname?.startsWith(item.href + '/') && item.href !== '/dashboard');
           
           return (
             <Link

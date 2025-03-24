@@ -9,12 +9,55 @@ export const metadata: Metadata = {
   description: 'Manage your Islamic Trivia game rooms',
 };
 
+// Define the Room type
+interface RoomType {
+  _id: string;
+  name: string;
+  description: string;
+  accessCode: string;
+  isActive: boolean;
+  startTime: Date;
+  endTime: Date;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+  [key: string]: any; // For any other properties
+}
+
 export default async function RoomsPage() {
   await dbConnect();
   const session = await getSession();
+
+  console.log(session);
+  
+  // Make sure we have a valid session and user ID
+  if (!session?.user?.id) {
+    // Handle the case where user is not logged in
+    return (
+      <div className="text-center py-12 bg-white shadow rounded-lg">
+        <h3 className="mt-2 text-lg font-medium text-gray-900">Authentication Required</h3>
+        <p className="mt-1 text-sm text-gray-500">Please log in to view your game rooms.</p>
+      </div>
+    );
+  }
   
   // Fetch rooms created by the current user
-  const rooms = await Room.find({ createdBy: session?.user?.id }).sort({ createdAt: -1 });
+  let rooms: RoomType[] = [];
+  try {
+    const roomDocs = await Room.find({ 
+      createdBy: session.user.id 
+    }).sort({ createdAt: -1 }).lean();
+
+    console.log(roomDocs);
+    
+    // Convert MongoDB documents to properly typed objects
+    rooms = roomDocs.map((room: any) => ({
+      ...room,
+      _id: room._id.toString()
+    }));
+  } catch (error) {
+    console.error("Error fetching rooms:", error);
+  }
   
   return (
     <div>
@@ -32,52 +75,44 @@ export default async function RoomsPage() {
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
           <ul className="divide-y divide-gray-200">
             {rooms.map((room) => (
-              <li key={room._id.toString()}>
-                <div className="block hover:bg-gray-50">
-                  <div className="px-4 py-4 sm:px-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-lg font-medium text-indigo-600 truncate">{room.name}</p>
-                        <p className="mt-1 flex items-center text-sm text-gray-500">
-                          Access Code: <span className="ml-1 font-mono">{room.accessCode}</span>
+              <li key={room._id}>
+                <Link href={`/dashboard/rooms/${room._id}`}>
+                  <div className="block hover:bg-gray-50 cursor-pointer">
+                    <div className="px-4 py-4 sm:px-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-lg font-medium text-indigo-600 truncate">{room.name}</p>
+                          <p className="mt-1 flex items-center text-sm text-gray-500">
+                            Access Code: <span className="ml-1 font-mono">{room.accessCode}</span>
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            room.isActive 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {room.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-2 text-sm text-gray-500">
+                        <p className="line-clamp-1">{room.description}</p>
+                        <p className="mt-1">
+                          {new Date(room.startTime).toLocaleString()} - {new Date(room.endTime).toLocaleString()}
                         </p>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          room.isActive 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {room.isActive ? 'Active' : 'Inactive'}
+                      <div className="mt-3 flex items-center justify-end text-sm">
+                        <span className="inline-flex items-center text-indigo-600">
+                          View Details
+                          <svg className="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
                         </span>
-                        <Link
-                          href={`/dashboard/rooms/${room._id}/edit`}
-                          className="px-3 py-1 text-sm text-indigo-600 hover:text-indigo-900 focus:outline-none"
-                        >
-                          Edit
-                        </Link>
-                        <Link
-                          href={`/dashboard/rooms/${room._id}/questions`}
-                          className="px-3 py-1 text-sm text-indigo-600 hover:text-indigo-900 focus:outline-none"
-                        >
-                          Questions
-                        </Link>
-                        <Link
-                          href={`/dashboard/rooms/${room._id}/participants`}
-                          className="px-3 py-1 text-sm text-indigo-600 hover:text-indigo-900 focus:outline-none"
-                        >
-                          Participants
-                        </Link>
                       </div>
                     </div>
-                    <div className="mt-2 text-sm text-gray-500">
-                      <p>{room.description}</p>
-                      <p className="mt-1">
-                        {new Date(room.startTime).toLocaleString()} - {new Date(room.endTime).toLocaleString()}
-                      </p>
-                    </div>
                   </div>
-                </div>
+                </Link>
               </li>
             ))}
           </ul>

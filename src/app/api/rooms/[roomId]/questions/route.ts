@@ -1,97 +1,102 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { getSession } from '@/lib/auth/session';
 import dbConnect from '@/lib/db/connection';
-import { Question, Room } from '@/lib/db/models';
-import { getCurrentUser } from '@/lib/auth/session';
+import { Room, Question } from '@/lib/db/models';
 
-interface Params {
-  params: {
-    roomId: string;
-  };
-}
+const questionSchema = z.object({
+  roomId: z.string(),
+  text: z.string().min(3),
+  options: z.array(z.string()).min(2).max(6),
+  correctOptionIndex: z.number().min(0),
+  points: z.number().min(1).max(100),
+  difficulty: z.enum(['bronze', 'silver', 'gold']),
+  category: z.string().min(1),
+  explanation: z.string().min(1),
+  isDisabled: z.boolean().optional(),
+  imageUrl: z.string().url().optional().or(z.literal('')),
+});
 
-export async function GET(req: NextRequest, { params }: Params) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { roomId: string } }
+) {
   try {
     await dbConnect();
-    const { roomId } = params;
-    const user = await getCurrentUser();
+    const session = await getSession();
     
-    if (!user) {
-      return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'content-type': 'application/json' },
-      });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Check if the room exists and belongs to the user
-    const room = await Room.findOne({ _id: roomId, createdBy: user.id });
-    if (!room) {
-      return new NextResponse(JSON.stringify({ error: 'Room not found' }), {
-        status: 404,
-        headers: { 'content-type': 'application/json' },
-      });
-    }
-    
-    const questions = await Question.find({ roomId }).sort({ createdAt: -1 });
-    
-    return new NextResponse(JSON.stringify(questions), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
+    // Verify that room exists and belongs to user
+    const room = await Room.findOne({
+      _id: params.roomId,
+      createdBy: session.user.id
     });
+    
+    if (!room) {
+      return NextResponse.json({ error: 'Room not found' }, { status: 404 });
+    }
+    
+    const questions = await Question.find({ roomId: params.roomId })
+      .sort({ createdAt: -1 });
+    
+    return NextResponse.json(questions);
   } catch (error) {
     console.error('Error fetching questions:', error);
-    return new NextResponse(JSON.stringify({ error: 'Failed to fetch questions' }), {
-      status: 500,
-      headers: { 'content-type': 'application/json' },
-    });
+    return NextResponse.json(
+      { error: 'Failed to fetch questions' },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(req: NextRequest, { params }: Params) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { roomId: string } }
+) {
   try {
     await dbConnect();
-    const { roomId } = params;
-    const user = await getCurrentUser();
+    const session = await getSession();
     
-    if (!user) {
-      return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'content-type': 'application/json' },
-      });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Check if the room exists and belongs to the user
-    const room = await Room.findOne({ _id: roomId, createdBy: user.id });
+    // Verify that room exists and belongs to user
+    const room = await Room.findOne({
+      _id: params.roomId,
+      createdBy: session.user.id
+    });
+    
     if (!room) {
-      return new NextResponse(JSON.stringify({ error: 'Room not found' }), {
-        status: 404,
-        headers: { 'content-type': 'application/json' },
-      });
+      return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
     
-    const { text, options, correctOptionIndex, points, difficulty, category, explanation, imageUrl } = await req.json();
+    const body = await request.json();
     
+    // Validate request body
+    const validation = questionSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: validation.error.format() },
+        { status: 400 }
+      );
+    }
+    
+    // Create the question
     const question = await Question.create({
-      roomId,
-      text,
-      options,
-      correctOptionIndex,
-      points,
-      difficulty,
-      category,
-      explanation,
-      isDisabled: false,
-      imageUrl,
+      ...body,
+      roomId: params.roomId,
     });
     
-    return new NextResponse(JSON.stringify(question), {
-      status: 201,
-      headers: { 'content-type': 'application/json' },
-    });
+    return NextResponse.json(question, { status: 201 });
   } catch (error) {
     console.error('Error creating question:', error);
-    return new NextResponse(JSON.stringify({ error: 'Failed to create question' }), {
-      status: 500,
-      headers: { 'content-type': 'application/json' },
-    });
+    return NextResponse.json(
+      { error: 'Failed to create question' },
+      { status: 500 }
+    );
   }
 } 

@@ -4,11 +4,11 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const navItems = [
-  { name: 'Dashboard', href: '/admin/dashboard' },
-  { name: 'Game Rooms', href: '/admin/rooms' },
-  { name: 'Questions', href: '/admin/questions' },
-  { name: 'Participants', href: '/admin/participants' },
-  { name: 'Rewards', href: '/admin/rewards' },
+  { name: 'Dashboard', href: '/dashboard' },
+  { name: 'Game Rooms', href: '/rooms' },
+  { name: 'Questions', href: '/questions' },
+  { name: 'Participants', href: '/participants' },
+  { name: 'Rewards', href: '/rewards' },
 ];
 
 export default function AdminNav() {

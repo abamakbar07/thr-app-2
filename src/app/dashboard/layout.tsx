@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: 'Manage Islamic Trivia THR games, questions, and rewards',
 };
 
-export default async function AdminLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;

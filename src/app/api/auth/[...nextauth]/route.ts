@@ -63,7 +63,7 @@ const handler = NextAuth({
     signIn: '/signin',
     signOut: '/signin',
     error: '/signin',
-    newUser: '/admin/dashboard',
+    newUser: '/dashboard',
   },
 });
 

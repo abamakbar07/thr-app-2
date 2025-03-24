@@ -17,7 +17,7 @@ export default async function AuthLayout({
   
   // If already logged in, redirect to dashboard
   if (session?.user) {
-    redirect('/admin/dashboard');
+    redirect('/dashboard');
   }
   
   return (

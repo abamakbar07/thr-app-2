@@ -32,7 +32,7 @@ export default function SignIn() {
         return;
       }
 
-      router.push('/admin/dashboard');
+      router.push('/dashboard');
       router.refresh();
     } catch (error) {
       setError('Something went wrong. Please try again.');

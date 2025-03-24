@@ -1,0 +1,27 @@
+import User, { IUser } from './User';
+import Room, { IRoom } from './Room';
+import Question, { IQuestion } from './Question';
+import Participant, { IParticipant } from './Participant';
+import Answer, { IAnswer } from './Answer';
+import Reward, { IReward } from './Reward';
+import Redemption, { IRedemption } from './Redemption';
+
+export {
+  User,
+  Room,
+  Question,
+  Participant,
+  Answer,
+  Reward,
+  Redemption,
+};
+
+export type {
+  IUser,
+  IRoom,
+  IQuestion,
+  IParticipant,
+  IAnswer,
+  IReward,
+  IRedemption,
+}; 

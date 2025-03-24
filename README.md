@@ -1,36 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Islamic Trivia Game for Eid al-Fitr with THR Rewards
+
+A full-stack application that allows administrators to create Islamic trivia game rooms and distribute THR (Tunjangan Hari Raya / Eid monetary gifts) to children based on their performance. This application is designed to make learning about Islam fun and interactive during the Eid al-Fitr celebration.
+
+## Features
+
+### For Admins
+- Create and manage game rooms
+- Generate unique access codes for participants
+- Create, update, and categorize Islamic trivia questions
+- Set reward tiers (bronze, silver, gold)
+- Track participant progress and reward redemptions
+
+### For Participants (Children)
+- Join rooms with access codes
+- Select questions from different difficulties
+- Answer questions within time limits
+- Earn points based on correct answers and speed
+- Redeem points for real THR rewards
+
+## Tech Stack
+
+- **Frontend & Backend**: Next.js 14+ with App Router
+- **Database**: MongoDB (with Mongoose ODM)
+- **Authentication**: NextAuth.js
+- **Styling**: Tailwind CSS
+- **Deployment**: Vercel
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js 18+ 
+- MongoDB database (local or MongoDB Atlas)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/islamic-trivia-thr.git
+   cd islamic-trivia-thr
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## Learn More
+3. Create a `.env.local` file in the root directory with the following variables:
+   ```
+   # MongoDB
+   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/neothrapp?retryWrites=true&w=majority
 
-To learn more about Next.js, take a look at the following resources:
+   # Authentication
+   NEXTAUTH_URL=http://localhost:3000
+   NEXTAUTH_SECRET=your-secret-key-at-least-32-characters-long
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   # Application
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
+   
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Deploy on Vercel
+## Application Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `/src/app` - Next.js App Router pages and API routes
+- `/src/components` - React components
+- `/src/lib/db` - Database models and connection
+- `/src/lib/auth` - Authentication utilities
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Data Models
+
+- **User** - Admin users who create and manage game rooms
+- **Room** - Game rooms created by admins
+- **Question** - Trivia questions for each room
+- **Participant** - Children playing the game
+- **Answer** - Record of answers given by participants
+- **Reward** - THR rewards that can be claimed
+- **Redemption** - Record of rewards claimed by participants
+
+## Real-time Updates
+
+The application uses polling to update question states and leaderboard data in real-time, which ensures compatibility with Vercel deployment.
+
+## Deployment
+
+This application is designed to be deployed on Vercel. You can deploy directly from GitHub:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/git/external?repository-url=https://github.com/yourusername/islamic-trivia-thr)
+
+Make sure to add the environment variables in the Vercel dashboard.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

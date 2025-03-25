@@ -85,11 +85,15 @@ export default function JoinGame() {
           accessCode: accessCode
         }));
 
+        // Reset loading state before navigation
+        setIsLoading(false);
+
         // Redirect to the game room
         router.push(`/game/${roomData._id}`);
       } else {
         // First-time participant, go to name input step
         setStep(3);
+        setIsLoading(false);
       }
     } catch (error: any) {
       setError(error.message || 'Failed to validate access code');
@@ -136,6 +140,9 @@ export default function JoinGame() {
         accessCode: accessCode
       }));
 
+      // Reset loading state before navigation
+      setIsLoading(false);
+      
       // Redirect to the game room
       router.push(`/game/${roomData._id}`);
     } catch (error: any) {

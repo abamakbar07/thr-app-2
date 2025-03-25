@@ -17,7 +17,8 @@ function generateAccessCode() {
 export async function POST(request: NextRequest, { params }: { params: { roomId: string } }) {
   try {
     // Extract roomId to handle it properly
-    const { roomId } = params;
+    const resolvedParams = await params;
+    const roomId = resolvedParams.roomId;
     
     await dbConnect();
     const session = await getSession();
@@ -63,7 +64,8 @@ export async function POST(request: NextRequest, { params }: { params: { roomId:
 export async function GET(request: NextRequest, { params }: { params: { roomId: string } }) {
   try {
     // Extract roomId to handle it properly
-    const { roomId } = params;
+    const resolvedParams = await params;
+    const roomId = resolvedParams.roomId;
     
     await dbConnect();
     const session = await getSession();

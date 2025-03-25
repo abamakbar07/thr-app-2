@@ -7,8 +7,9 @@ export async function GET(
   { params }: { params: { roomId: string } }
 ) {
   try {
-    // Extract roomId to handle it properly
-    const { roomId } = params;
+    // Await params to handle it properly
+    const resolvedParams = await params;
+    const { roomId } = resolvedParams;
     
     await dbConnect();
     

@@ -1,7 +1,4 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
-import bcrypt from 'bcryptjs';
-import dbConnect from '@/lib/db/connection';
-import { User } from '@/lib/db/models';
 import { NextAuthOptions } from 'next-auth';
 
 export const authOptions: NextAuthOptions = {
@@ -17,28 +14,9 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        await dbConnect();
-        
-        const user = await User.findOne({ email: credentials.email });
-        
-        if (!user) {
-          return null;
-        }
-        
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-        
-        if (!isPasswordValid) {
-          return null;
-        }
-        
-        return {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-        };
+        // The actual user verification will be handled in the API route
+        // This is just a placeholder to satisfy the type system
+        return null;
       },
     }),
   ],

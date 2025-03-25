@@ -18,13 +18,12 @@ export async function GET(req: NextRequest) {
 
     // Find room by access code and check if it's active
     const room = await Room.findOne({ 
-      accessCode: code,
-      isActive: true
+      accessCode: code
     });
 
     if (!room) {
       return NextResponse.json(
-        { message: 'Invalid access code or inactive room' },
+        { message: 'Invalid access code' },
         { status: 404 }
       );
     }

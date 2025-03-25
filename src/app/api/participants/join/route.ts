@@ -16,20 +16,11 @@ export async function POST(req: NextRequest) {
     }
     
     // Find the room with the given access code
-    const room = await Room.findOne({ accessCode, isActive: true });
+    const room = await Room.findOne({ accessCode });
     
     if (!room) {
-      return new NextResponse(JSON.stringify({ message: 'Invalid access code or room is not active' }), {
+      return new NextResponse(JSON.stringify({ message: 'Invalid access code' }), {
         status: 404,
-        headers: { 'content-type': 'application/json' },
-      });
-    }
-    
-    // Check if room is within its time window
-    const now = new Date();
-    if (now < room.startTime || now > room.endTime) {
-      return new NextResponse(JSON.stringify({ message: 'This room is not currently open for participation' }), {
-        status: 400,
         headers: { 'content-type': 'application/json' },
       });
     }

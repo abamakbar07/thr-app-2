@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { QuestionSelection } from '@/components/game/QuestionSelection';
 import { TriviaCard } from '@/components/game/TriviaCard';
 import { IQuestion, IRoom } from '@/lib/db/models';
@@ -13,11 +13,12 @@ interface AnswerResult {
   explanation: string;
 }
 
-export default function GamePlay({ params }: { params: { roomId: string } }) {
+export default function GamePlay() {
   const router = useRouter();
+  const params = useParams();
   const searchParams = useSearchParams();
   const participantId = searchParams.get('pid');
-  const { roomId } = params;
+  const roomId = params.roomId as string;
   
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

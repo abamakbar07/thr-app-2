@@ -35,6 +35,24 @@ export async function GET(
 ) {
   try {
     await dbConnect();
+    
+    // Get participant ID from query params if available
+    const url = new URL(request.url);
+    const participantId = url.searchParams.get('pid');
+    
+    // If participant ID is provided, we'll use that for access
+    if (participantId) {
+      // Find the room without checking creator
+      const room = await Room.findOne({ _id: params.roomId });
+      
+      if (!room) {
+        return NextResponse.json({ error: 'Room not found' }, { status: 404 });
+      }
+      
+      return NextResponse.json({ room });
+    }
+    
+    // If no participant ID, proceed with normal admin authentication
     const session = await getSession();
     
     if (!session?.user) {
@@ -50,7 +68,7 @@ export async function GET(
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
     
-    return NextResponse.json(room);
+    return NextResponse.json({ room });
   } catch (error) {
     console.error('Error fetching room:', error);
     return NextResponse.json(

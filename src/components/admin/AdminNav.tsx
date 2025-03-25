@@ -4,11 +4,11 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const navItems = [
-  { name: 'Dashboard', href: '/dashboard' },
-  { name: 'Game Rooms', href: '/dashboard/rooms' },
-  { name: 'Questions', href: '/dashboard/questions' },
-  { name: 'Participants', href: '/dashboard/participants' },
-  { name: 'Rewards', href: '/dashboard/rewards' },
+  { name: 'Dashboard', href: '/dashboard', icon: '📊' },
+  { name: 'Game Rooms', href: '/dashboard/rooms', icon: '🎮' },
+  { name: 'Questions', href: '/dashboard/questions', icon: '❓' },
+  { name: 'Participants', href: '/dashboard/participants', icon: '👥' },
+  { name: 'Rewards', href: '/dashboard/rewards', icon: '🎁' },
 ];
 
 export default function AdminNav() {
@@ -26,13 +26,14 @@ export default function AdminNav() {
               key={item.name}
               href={item.href}
               className={`
-                group flex items-center px-3 py-2 text-sm font-medium rounded-md
+                group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-150
                 ${isActive 
-                  ? 'bg-indigo-100 text-indigo-700' 
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}
+                  ? 'bg-[#128C7E] text-white' 
+                  : 'text-gray-700 hover:bg-[#f0f2f5] hover:text-[#128C7E]'}
               `}
               aria-current={isActive ? 'page' : undefined}
             >
+              <span className="mr-3 text-lg">{item.icon}</span>
               {item.name}
             </Link>
           );

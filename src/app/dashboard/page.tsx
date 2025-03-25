@@ -21,58 +21,60 @@ export default async function AdminDashboard() {
   
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">Admin Dashboard</h1>
       
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
         {/* Stats Cards */}
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-100">
           <div className="px-4 py-5 sm:p-6">
             <dt className="text-sm font-medium text-gray-500 truncate">Total Game Rooms</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">{roomsCount}</dd>
+            <dd className="mt-1 text-3xl font-semibold text-[#128C7E]">{roomsCount}</dd>
           </div>
         </div>
         
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-100">
           <div className="px-4 py-5 sm:p-6">
             <dt className="text-sm font-medium text-gray-500 truncate">Total Questions</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">{questionsCount}</dd>
+            <dd className="mt-1 text-3xl font-semibold text-[#128C7E]">{questionsCount}</dd>
           </div>
         </div>
         
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-100">
           <div className="px-4 py-5 sm:p-6">
             <dt className="text-sm font-medium text-gray-500 truncate">Total Participants</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">{participantsCount}</dd>
+            <dd className="mt-1 text-3xl font-semibold text-[#128C7E]">{participantsCount}</dd>
           </div>
         </div>
         
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-100">
           <div className="px-4 py-5 sm:p-6">
             <dt className="text-sm font-medium text-gray-500 truncate">Available Rewards</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">{rewardsCount}</dd>
+            <dd className="mt-1 text-3xl font-semibold text-[#128C7E]">{rewardsCount}</dd>
           </div>
         </div>
       </div>
       
       {/* Recent Game Rooms */}
-      <h2 className="text-xl font-semibold mb-4">Recent Game Rooms</h2>
-      <div className="bg-white shadow rounded-lg">
+      <h2 className="text-xl font-semibold mb-4 text-gray-800">Recent Game Rooms</h2>
+      <div className="bg-white shadow-sm rounded-lg border border-gray-100">
         {recentRooms.length > 0 ? (
-          <ul className="divide-y divide-gray-200">
+          <ul className="divide-y divide-gray-100">
             {recentRooms.map((room) => (
-              <li key={room._id.toString()} className="px-6 py-4">
+              <li key={room._id.toString()} className="px-6 py-4 hover:bg-[#f0f2f5] transition-colors duration-150">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-medium">{room.name}</h3>
+                    <h3 className="text-lg font-medium text-gray-900">{room.name}</h3>
                     <p className="text-sm text-gray-500">
-                      Access Code: <span className="font-mono">{room.accessCode}</span>
+                      Access Code: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{room.accessCode}</span>
                     </p>
                     <p className="text-sm text-gray-500">
                       Created: {new Date(room.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    room.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                  <span className={`px-3 py-1 text-xs rounded-full ${
+                    room.isActive 
+                      ? 'bg-[#25D366] text-white' 
+                      : 'bg-gray-100 text-gray-800'
                   }`}>
                     {room.isActive ? 'Active' : 'Inactive'}
                   </span>

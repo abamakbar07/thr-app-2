@@ -7,10 +7,13 @@ export async function GET(
   { params }: { params: { participantId: string } }
 ) {
   try {
+    // Extract participantId to handle it properly
+    const { participantId } = params;
+    
     await dbConnect();
     
     // Find participant
-    const participant = await Participant.findById(params.participantId);
+    const participant = await Participant.findById(participantId);
     
     if (!participant) {
       return NextResponse.json(
@@ -19,18 +22,18 @@ export async function GET(
       );
     }
     
-    // Get participant's answers and calculate total points
-    const answers = await Answer.find({ participantId: params.participantId });
-    const totalPoints = answers.reduce((sum, answer) => sum + (answer.pointsEarned || 0), 0);
+    // Get participant's answers and calculate total rupiah
+    const answers = await Answer.find({ participantId });
+    const totalRupiah = answers.reduce((sum, answer) => sum + (answer.rupiahEarned || 0), 0);
     
-    // Return participant data with points
+    // Return participant data with rupiah
     return NextResponse.json({
       id: participant._id,
       name: participant.name,
       roomId: participant.roomId,
       joinedAt: participant.joinedAt,
       score: participant.score,
-      totalPoints: totalPoints
+      totalRupiah
     });
     
   } catch (error) {

@@ -17,11 +17,14 @@ interface EditRoomPageProps {
 }
 
 export default async function EditRoomPage({ params }: EditRoomPageProps) {
+  // Extract roomId to handle it properly
+  const { roomId } = params;
+  
   await dbConnect();
   const session = await getSession();
 
   const room = await Room.findOne({ 
-    _id: params.roomId, 
+    _id: roomId, 
     createdBy: session?.user?.id 
   }).lean() as any;
 

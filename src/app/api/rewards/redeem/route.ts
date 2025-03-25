@@ -39,15 +39,15 @@ export async function POST(req: NextRequest) {
         throw new Error('Participant not found');
       }
       
-      // Check if the participant has enough points
-      if (participant.totalPoints < reward.pointsRequired) {
-        throw new Error('Not enough points to claim this reward');
+      // Check if the participant has enough rupiah
+      if (participant.totalRupiah < reward.rupiahRequired) {
+        throw new Error('Not enough Rupiah to claim this reward');
       }
       
-      // Deduct points and update remaining quantity
+      // Deduct rupiah and update remaining quantity
       await Participant.findByIdAndUpdate(
         participantId,
-        { $inc: { totalPoints: -reward.pointsRequired } },
+        { $inc: { totalRupiah: -reward.rupiahRequired } },
         { session }
       );
       
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
           rewardId,
           participantId,
           roomId: reward.roomId,
-          pointsSpent: reward.pointsRequired,
+          rupiahSpent: reward.rupiahRequired,
           claimedAt: new Date(),
           status: 'pending',
         }],
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
         success: true,
         message: 'Reward successfully redeemed',
         redemptionId: redemption[0]._id,
-        newPointsTotal: participant.totalPoints - reward.pointsRequired
+        newRupiahTotal: participant.totalRupiah - reward.rupiahRequired
       }), {
         status: 200,
         headers: { 'content-type': 'application/json' },

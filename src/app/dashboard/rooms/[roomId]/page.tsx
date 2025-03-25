@@ -4,6 +4,7 @@ import Link from 'next/link';
 import dbConnect from '@/lib/db/connection';
 import { Room, Question, Participant } from '@/lib/db/models';
 import { getSession } from '@/lib/auth/session';
+import AccessCodeGenerator from '@/components/AccessCodeGenerator';
 
 export const metadata: Metadata = {
   title: 'Room Details - Islamic Trivia THR',
@@ -17,12 +18,15 @@ interface RoomDetailPageProps {
 }
 
 export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
+  // Wait for params to be fully resolved
+  const { roomId } = params;
+  
   await dbConnect();
   const session = await getSession();
 
   // Fetch room and verify ownership
   const room = await Room.findOne({ 
-    _id: params.roomId, 
+    _id: roomId, 
     createdBy: session?.user?.id 
   }).lean() as any;
 
@@ -32,13 +36,13 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
 
   // Get counts of questions by difficulty
   const questionCounts = {
-    bronze: await Question.countDocuments({ roomId: params.roomId, difficulty: 'bronze' }),
-    silver: await Question.countDocuments({ roomId: params.roomId, difficulty: 'silver' }),
-    gold: await Question.countDocuments({ roomId: params.roomId, difficulty: 'gold' }),
+    bronze: await Question.countDocuments({ roomId, difficulty: 'bronze' }),
+    silver: await Question.countDocuments({ roomId, difficulty: 'silver' }),
+    gold: await Question.countDocuments({ roomId, difficulty: 'gold' }),
   };
   
   // Get total number of participants
-  const participantCount = await Participant.countDocuments({ roomId: params.roomId });
+  const participantCount = await Participant.countDocuments({ roomId });
 
   // Format dates for display
   const startTime = new Date(room.startTime).toLocaleString();
@@ -76,7 +80,7 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
         </div>
         <div className="flex space-x-3">
           <Link
-            href={`/dashboard/rooms/${params.roomId}/edit`}
+            href={`/dashboard/rooms/${roomId}/edit`}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-[#128C7E] hover:bg-[#075E54] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#128C7E] transition-colors duration-150"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,7 +90,7 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
           </Link>
           {(status === "Active" || status === "Upcoming") && (
             <Link
-              href={`/dashboard/sessions/${params.roomId}`}
+              href={`/dashboard/sessions/${roomId}`}
               className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-[#f0f2f5] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#128C7E] transition-colors duration-150"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -177,7 +181,7 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
           
           <div className="mt-6">
             <Link 
-              href={`/dashboard/rooms/${params.roomId}/questions`}
+              href={`/dashboard/rooms/${roomId}/questions`}
               className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-[#f0f2f5] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#128C7E] transition-colors duration-150"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,13 +192,16 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
           </div>
         </div>
         
+        {/* Access Codes */}
+        <AccessCodeGenerator roomId={roomId} />
+        
         {/* Actions */}
         <div className="border-t border-gray-100 px-4 py-5 sm:px-6 bg-[#f0f2f5]">
           <h3 className="text-lg leading-6 font-medium text-gray-900">Actions</h3>
         </div>
         <div className="px-4 py-5 sm:p-6 flex flex-wrap gap-4">
           <Link 
-            href={`/dashboard/rooms/${params.roomId}/edit`}
+            href={`/dashboard/rooms/${roomId}/edit`}
             className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-[#128C7E] hover:bg-[#075E54] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#128C7E] transition-colors duration-150"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,7 +210,7 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
             Edit Room
           </Link>
           <Link 
-            href={`/dashboard/rooms/${params.roomId}/participants`}
+            href={`/dashboard/rooms/${roomId}/participants`}
             className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-[#f0f2f5] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#128C7E] transition-colors duration-150"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -213,7 +220,7 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
           </Link>
           {status === "Active" && (
             <Link 
-              href={`/dashboard/sessions/${params.roomId}/leaderboard`}
+              href={`/dashboard/sessions/${roomId}/leaderboard`}
               className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-[#25D366] hover:bg-[#128C7E] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#25D366] transition-colors duration-150"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -6,7 +6,7 @@ export interface IQuestion {
   text: string;
   options: string[];
   correctOptionIndex: number;
-  points: number;
+  rupiah: number;
   difficulty: 'bronze' | 'silver' | 'gold';
   category: string;
   explanation: string;
@@ -19,7 +19,7 @@ export interface IQuestion {
 const QuestionSchema = new Schema<IQuestion>(
   {
     roomId: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'Room',
       required: true,
     },
@@ -35,7 +35,7 @@ const QuestionSchema = new Schema<IQuestion>(
       type: Number,
       required: true,
     },
-    points: {
+    rupiah: {
       type: Number,
       required: true,
     },

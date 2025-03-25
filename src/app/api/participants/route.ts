@@ -4,12 +4,12 @@ import { Room, Participant } from '@/lib/db/models';
 
 export async function POST(req: NextRequest) {
   try {
-    const { roomId, name } = await req.json();
+    const { roomId, name, accessCode } = await req.json();
 
     // Validate input
-    if (!roomId || !name) {
+    if (!roomId || !name || !accessCode) {
       return NextResponse.json(
-        { message: 'Room ID and name are required' },
+        { message: 'Room ID, name, and access code are required' },
         { status: 400 }
       );
     }
@@ -25,12 +25,41 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Check if access code is already in use
+    const existingParticipant = await Participant.findOne({ accessCode });
+    if (existingParticipant) {
+      // If participant with this code exists and is linked to this room, update name
+      if (existingParticipant.roomId.toString() === roomId) {
+        existingParticipant.name = name;
+        existingParticipant.currentStatus = 'active';
+        await existingParticipant.save();
+
+        return NextResponse.json(
+          {
+            message: 'Successfully rejoined the room',
+            participant: {
+              _id: existingParticipant._id.toString(),
+              name: existingParticipant.name,
+              roomId: existingParticipant.roomId.toString(),
+              totalRupiah: existingParticipant.totalRupiah,
+            },
+          },
+          { status: 200 }
+        );
+      } else {
+        return NextResponse.json(
+          { message: 'Access code is already in use for another room' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Create new participant
     const participant = await Participant.create({
       name,
       roomId,
-      score: 0,
-      answeredQuestions: [],
+      totalRupiah: 0,
+      accessCode,
       joinedAt: new Date(),
     });
 
@@ -41,7 +70,7 @@ export async function POST(req: NextRequest) {
           _id: participant._id.toString(),
           name: participant.name,
           roomId: participant.roomId.toString(),
-          score: participant.score,
+          totalRupiah: participant.totalRupiah,
         },
       },
       { status: 201 }

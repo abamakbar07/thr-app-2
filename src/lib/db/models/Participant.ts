@@ -5,13 +5,14 @@ export interface IParticipant {
   roomId: string;
   name: string;
   joinedAt: Date;
-  totalPoints: number;
+  totalRupiah: number;
+  accessCode: string;
   currentStatus: 'active' | 'inactive';
 }
 
 const ParticipantSchema = new Schema<IParticipant>({
   roomId: {
-    type: Schema.Types.ObjectId,
+    type: String,
     ref: 'Room',
     required: true,
   },
@@ -23,9 +24,14 @@ const ParticipantSchema = new Schema<IParticipant>({
     type: Date,
     default: Date.now,
   },
-  totalPoints: {
+  totalRupiah: {
     type: Number,
     default: 0,
+  },
+  accessCode: {
+    type: String,
+    required: true,
+    unique: true,
   },
   currentStatus: {
     type: String,

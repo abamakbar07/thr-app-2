@@ -6,17 +6,20 @@ import Link from 'next/link';
 
 export default function JoinGame() {
   const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [roomCode, setRoomCode] = useState('');
   const [accessCode, setAccessCode] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [roomData, setRoomData] = useState<any>(null);
+  const [participantData, setParticipantData] = useState<any>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validateRoomCode = async () => {
     setError('');
 
-    if (!accessCode.trim() || !name.trim()) {
-      setError('Please enter both your name and the access code');
+    if (!roomCode.trim()) {
+      setError('Please enter a valid room code');
       return;
     }
 
@@ -24,13 +27,87 @@ export default function JoinGame() {
 
     try {
       // Check if room exists and is active
-      const roomResponse = await fetch(`/api/rooms/validate?code=${accessCode}`);
-      const roomData = await roomResponse.json();
+      const response = await fetch(`/api/rooms/validate?code=${roomCode}`);
+      const data = await response.json();
 
-      if (!roomResponse.ok) {
-        throw new Error(roomData.message || 'Invalid access code');
+      if (!response.ok) {
+        throw new Error(data.message || 'Invalid room code');
       }
 
+      setRoomData(data.room);
+      setStep(2);
+    } catch (error: any) {
+      setError(error.message || 'Failed to validate room code');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const validateAccessCode = async () => {
+    setError('');
+
+    if (!accessCode.trim()) {
+      setError('Please enter a valid access code');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Validate participant access code
+      const response = await fetch(`/api/participants/validate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          roomId: roomData._id,
+          accessCode: accessCode,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Invalid access code');
+      }
+
+      if (data.participant?.name) {
+        // Existing participant, store data and proceed to game
+        setParticipantData(data.participant);
+        
+        // Store participant info in localStorage
+        localStorage.setItem('participant', JSON.stringify({
+          id: data.participant._id,
+          name: data.participant.name,
+          roomId: roomData._id,
+          roomName: roomData.name,
+          accessCode: accessCode
+        }));
+
+        // Redirect to the game room
+        router.push(`/game/${roomData._id}`);
+      } else {
+        // First-time participant, go to name input step
+        setStep(3);
+      }
+    } catch (error: any) {
+      setError(error.message || 'Failed to validate access code');
+      setIsLoading(false);
+    }
+  };
+
+  const handleJoinGame = async () => {
+    setError('');
+
+    if (!name.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
       // Join the room as a participant
       const participantResponse = await fetch('/api/participants', {
         method: 'POST',
@@ -38,8 +115,9 @@ export default function JoinGame() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          roomId: roomData.room._id,
+          roomId: roomData._id,
           name: name,
+          accessCode: accessCode,
         }),
       });
 
@@ -53,12 +131,13 @@ export default function JoinGame() {
       localStorage.setItem('participant', JSON.stringify({
         id: participantData.participant._id,
         name: participantData.participant.name,
-        roomId: roomData.room._id,
-        roomName: roomData.room.name
+        roomId: roomData._id,
+        roomName: roomData.name,
+        accessCode: accessCode
       }));
 
       // Redirect to the game room
-      router.push(`/game/${roomData.room._id}`);
+      router.push(`/game/${roomData._id}`);
     } catch (error: any) {
       setError(error.message || 'Failed to join the game');
       setIsLoading(false);
@@ -86,7 +165,9 @@ export default function JoinGame() {
               Join a Trivia Game
             </h2>
             <p className="mt-2 text-sm text-gray-600">
-              Enter the access code provided by your teacher or event organizer
+              {step === 1 && "Enter the room code provided by your teacher or event organizer"}
+              {step === 2 && "Enter your access code to continue"}
+              {step === 3 && "Enter your name to join the game"}
             </p>
           </div>
 
@@ -97,53 +178,123 @@ export default function JoinGame() {
               </div>
             )}
             
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                  Your Name
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-emerald-500 sm:text-sm"
-                    placeholder="Enter your name"
-                  />
+            {/* Step 1: Room Code Input */}
+            {step === 1 && (
+              <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); validateRoomCode(); }}>
+                <div>
+                  <label htmlFor="roomCode" className="block text-sm font-medium text-gray-700">
+                    Room Code
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="roomCode"
+                      name="roomCode"
+                      type="text"
+                      required
+                      value={roomCode}
+                      onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                      className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-emerald-500 sm:text-sm uppercase"
+                      placeholder="Enter room code (e.g. ABC123)"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label htmlFor="accessCode" className="block text-sm font-medium text-gray-700">
-                  Access Code
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="accessCode"
-                    name="accessCode"
-                    type="text"
-                    required
-                    value={accessCode}
-                    onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
-                    className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-emerald-500 sm:text-sm uppercase"
-                    placeholder="Enter room code (e.g. ABC123)"
-                  />
+                <div>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex w-full justify-center rounded-md border border-transparent bg-emerald-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Validating...' : 'Continue'}
+                  </button>
                 </div>
-              </div>
+              </form>
+            )}
 
-              <div>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="flex w-full justify-center rounded-md border border-transparent bg-emerald-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? 'Joining...' : 'Join Game'}
-                </button>
-              </div>
-            </form>
+            {/* Step 2: Access Code Input */}
+            {step === 2 && (
+              <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); validateAccessCode(); }}>
+                <div>
+                  <label htmlFor="accessCode" className="block text-sm font-medium text-gray-700">
+                    Access Code
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="accessCode"
+                      name="accessCode"
+                      type="text"
+                      required
+                      value={accessCode}
+                      onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                      className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-emerald-500 sm:text-sm uppercase"
+                      placeholder="Enter your access code"
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500">
+                    This code was provided to you by your teacher or event organizer
+                  </p>
+                </div>
+
+                <div className="flex flex-col space-y-3">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex w-full justify-center rounded-md border border-transparent bg-emerald-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Validating...' : 'Continue'}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="text-emerald-600 hover:text-emerald-700 text-sm"
+                  >
+                    ← Back to room code
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Step 3: Name Input (First Time) */}
+            {step === 3 && (
+              <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleJoinGame(); }}>
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                    Your Name
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="name"
+                      name="name"
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-emerald-500 sm:text-sm"
+                      placeholder="Enter your name"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col space-y-3">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex w-full justify-center rounded-md border border-transparent bg-emerald-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Joining...' : 'Join Game'}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setStep(2)}
+                    className="text-emerald-600 hover:text-emerald-700 text-sm"
+                  >
+                    ← Back to access code
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       </div>

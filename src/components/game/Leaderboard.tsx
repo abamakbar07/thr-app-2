@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 interface LeaderboardParticipant {
   _id: string;
   name: string;
-  totalPoints: number;
+  totalRupiah: number;
   position?: number;
 }
 
@@ -29,9 +29,9 @@ export function Leaderboard({ roomId, currentParticipantId, refreshInterval = 10
       
       const data = await response.json();
       
-      // Sort by points and add position
+      // Sort by rupiah and add position
       const sortedParticipants = data.participants
-        .sort((a: LeaderboardParticipant, b: LeaderboardParticipant) => b.totalPoints - a.totalPoints)
+        .sort((a: LeaderboardParticipant, b: LeaderboardParticipant) => b.totalRupiah - a.totalRupiah)
         .map((p: LeaderboardParticipant, index: number) => ({
           ...p,
           position: index + 1
@@ -117,7 +117,7 @@ export function Leaderboard({ roomId, currentParticipantId, refreshInterval = 10
               </p>
             </div>
             <div className="flex-shrink-0 font-bold text-emerald-600">
-              {participant.totalPoints} pts
+              {participant.totalRupiah} rupiah
             </div>
           </div>
         ))}

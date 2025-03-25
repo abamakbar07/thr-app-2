@@ -9,8 +9,9 @@ import { IQuestion, IRoom } from '@/lib/db/models';
 interface AnswerResult {
   isCorrect: boolean;
   correctOptionIndex: number;
-  pointsAwarded: number;
+  rupiahAwarded: number;
   explanation: string;
+  newTotalRupiah: number;
 }
 
 export default function GamePlay() {
@@ -26,7 +27,7 @@ export default function GamePlay() {
   const [questions, setQuestions] = useState<IQuestion[]>([]);
   const [selectedQuestion, setSelectedQuestion] = useState<IQuestion | null>(null);
   const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
-  const [points, setPoints] = useState(0);
+  const [rupiah, setRupiah] = useState(0);
   
   // Fetch room and questions
   useEffect(() => {
@@ -59,7 +60,7 @@ export default function GamePlay() {
         const participantResponse = await fetch(`/api/participants/${participantId}`);
         if (participantResponse.ok) {
           const participantData = await participantResponse.json();
-          setPoints(participantData.totalPoints || 0);
+          setRupiah(participantData.totalRupiah || 0);
         }
         
         setIsLoading(false);
@@ -85,7 +86,7 @@ export default function GamePlay() {
       fetch(`/api/participants/${participantId}`)
         .then(res => res.json())
         .then(data => {
-          setPoints(data.totalPoints || 0);
+          setRupiah(data.totalRupiah || 0);
         })
         .catch(err => console.error('Error polling participant data:', err));
     }, 10000); // Poll every 10 seconds
@@ -127,7 +128,7 @@ export default function GamePlay() {
         setAnswerResult(result);
         
         // Update points
-        setPoints(result.newTotalPoints);
+        setRupiah(result.newTotalRupiah);
         
         // Update the question in our list to show as disabled if correct
         if (result.isCorrect) {
@@ -195,7 +196,7 @@ export default function GamePlay() {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-emerald-600 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span className="font-bold text-emerald-800">{points} points</span>
+            <span className="font-bold text-emerald-800">{rupiah} rupiah</span>
           </div>
         </div>
       </header>
@@ -229,7 +230,7 @@ export default function GamePlay() {
                   
                   {answerResult.isCorrect ? (
                     <p className="text-green-600 text-center font-medium mb-4">
-                      You earned {answerResult.pointsAwarded} points!
+                      You earned {answerResult.rupiahAwarded} rupiah!
                     </p>
                   ) : (
                     <p className="text-center mb-2">

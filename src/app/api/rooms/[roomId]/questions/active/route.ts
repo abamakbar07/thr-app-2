@@ -7,6 +7,9 @@ export async function GET(
   { params }: { params: { roomId: string } }
 ) {
   try {
+    // Extract roomId to handle it properly
+    const { roomId } = params;
+    
     await dbConnect();
     
     // Get participant ID from query params
@@ -23,7 +26,7 @@ export async function GET(
     // Verify the participant exists and belongs to this room
     const participant = await Participant.findOne({
       _id: participantId,
-      roomId: params.roomId
+      roomId
     });
     
     if (!participant) {
@@ -35,7 +38,7 @@ export async function GET(
     
     // Fetch the active questions for this room
     const questions = await Question.find({ 
-      roomId: params.roomId,
+      roomId,
       isDisabled: { $ne: true }
     }).sort({ difficulty: 1, createdAt: -1 });
     

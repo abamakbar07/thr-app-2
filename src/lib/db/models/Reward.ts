@@ -6,7 +6,7 @@ export interface IReward {
   name: string;
   description: string;
   tier: 'bronze' | 'silver' | 'gold';
-  pointsRequired: number;
+  rupiahRequired: number;
   imageUrl: string;
   quantity: number;
   remainingQuantity: number;
@@ -14,7 +14,7 @@ export interface IReward {
 
 const RewardSchema = new Schema<IReward>({
   roomId: {
-    type: Schema.Types.ObjectId,
+    type: String,
     ref: 'Room',
     required: true,
   },
@@ -31,7 +31,7 @@ const RewardSchema = new Schema<IReward>({
     enum: ['bronze', 'silver', 'gold'],
     required: true,
   },
-  pointsRequired: {
+  rupiahRequired: {
     type: Number,
     required: true,
   },

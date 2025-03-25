@@ -17,12 +17,15 @@ interface QuestionsPageProps {
 }
 
 export default async function QuestionsPage({ params }: QuestionsPageProps) {
+  // Extract roomId to handle it properly
+  const { roomId } = params;
+  
   await dbConnect();
   const session = await getSession();
 
   // Fetch room and verify ownership
   const room = await Room.findOne({ 
-    _id: params.roomId, 
+    _id: roomId, 
     createdBy: session?.user?.id 
   });
 
@@ -31,7 +34,7 @@ export default async function QuestionsPage({ params }: QuestionsPageProps) {
   }
 
   // Fetch questions for this room
-  const questions = await Question.find({ roomId: params.roomId })
+  const questions = await Question.find({ roomId })
     .sort({ createdAt: -1 });
 
   // Group questions by difficulty
@@ -50,13 +53,13 @@ export default async function QuestionsPage({ params }: QuestionsPageProps) {
         </div>
         <div className="flex space-x-2">
           <Link 
-            href={`/dashboard/rooms/${params.roomId}/questions/new`} 
+            href={`/dashboard/rooms/${roomId}/questions/new`} 
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             Add Question
           </Link>
           <Link 
-            href={`/dashboard/rooms/${params.roomId}/questions/import`} 
+            href={`/dashboard/rooms/${roomId}/questions/import`} 
             className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             Import Questions
@@ -79,7 +82,7 @@ export default async function QuestionsPage({ params }: QuestionsPageProps) {
                     <div className="flex justify-between">
                       <p className="text-sm font-medium text-gray-900 truncate">{question.text}</p>
                       <Link 
-                        href={`/dashboard/rooms/${params.roomId}/questions/${question._id}/edit`}
+                        href={`/dashboard/rooms/${roomId}/questions/${question._id}/edit`}
                         className="ml-2 text-xs text-indigo-600 hover:text-indigo-900"
                       >
                         Edit
@@ -109,7 +112,7 @@ export default async function QuestionsPage({ params }: QuestionsPageProps) {
                     <div className="flex justify-between">
                       <p className="text-sm font-medium text-gray-900 truncate">{question.text}</p>
                       <Link 
-                        href={`/dashboard/rooms/${params.roomId}/questions/${question._id}/edit`}
+                        href={`/dashboard/rooms/${roomId}/questions/${question._id}/edit`}
                         className="ml-2 text-xs text-indigo-600 hover:text-indigo-900"
                       >
                         Edit
@@ -139,7 +142,7 @@ export default async function QuestionsPage({ params }: QuestionsPageProps) {
                     <div className="flex justify-between">
                       <p className="text-sm font-medium text-gray-900 truncate">{question.text}</p>
                       <Link 
-                        href={`/dashboard/rooms/${params.roomId}/questions/${question._id}/edit`}
+                        href={`/dashboard/rooms/${roomId}/questions/${question._id}/edit`}
                         className="ml-2 text-xs text-indigo-600 hover:text-indigo-900"
                       >
                         Edit
@@ -158,7 +161,7 @@ export default async function QuestionsPage({ params }: QuestionsPageProps) {
       
       <div className="mt-6 text-right">
         <Link 
-          href={`/dashboard/rooms/${params.roomId}`} 
+          href={`/dashboard/rooms/${roomId}`} 
           className="text-sm text-indigo-600 hover:text-indigo-900"
         >
           Back to Room Details

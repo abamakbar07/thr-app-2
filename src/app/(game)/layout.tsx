@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: 'Islamic Trivia Game - Player Area',
@@ -13,6 +14,7 @@ export default function GameLayout({
   return (
     <div className="min-h-screen bg-emerald-50">
       {children}
+      <Toaster position="top-right" />
     </div>
   );
 } 

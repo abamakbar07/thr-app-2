@@ -30,7 +30,8 @@ export async function POST(req: NextRequest) {
       roomId: room._id,
       name,
       joinedAt: new Date(),
-      totalPoints: 0,
+      totalRupiah: 0,
+      accessCode,
       currentStatus: 'active',
     });
     

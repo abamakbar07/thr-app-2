@@ -34,6 +34,9 @@ export async function GET(
   { params }: { params: { roomId: string } }
 ) {
   try {
+    // Extract roomId to handle it properly
+    const { roomId } = params;
+    
     await dbConnect();
     
     // Get participant ID from query params if available
@@ -43,7 +46,7 @@ export async function GET(
     // If participant ID is provided, we'll use that for access
     if (participantId) {
       // Find the room without checking creator
-      const room = await Room.findOne({ _id: params.roomId });
+      const room = await Room.findOne({ _id: roomId });
       
       if (!room) {
         return NextResponse.json({ error: 'Room not found' }, { status: 404 });
@@ -60,7 +63,7 @@ export async function GET(
     }
     
     const room = await Room.findOne({ 
-      _id: params.roomId,
+      _id: roomId,
       createdBy: session.user.id
     });
     
@@ -83,6 +86,9 @@ export async function PUT(
   { params }: { params: { roomId: string } }
 ) {
   try {
+    // Extract roomId to handle it properly
+    const { roomId } = params;
+    
     await dbConnect();
     const session = await getSession();
     
@@ -103,7 +109,7 @@ export async function PUT(
     
     // Check if room exists and belongs to current user
     const room = await Room.findOne({
-      _id: params.roomId,
+      _id: roomId,
       createdBy: session.user.id
     });
     
@@ -113,7 +119,7 @@ export async function PUT(
     
     // Update the room
     const updatedRoom = await Room.findByIdAndUpdate(
-      params.roomId,
+      roomId,
       {
         name: body.name,
         description: body.description,
@@ -144,6 +150,9 @@ export async function DELETE(
   { params }: { params: { roomId: string } }
 ) {
   try {
+    // Extract roomId to handle it properly
+    const { roomId } = params;
+    
     await dbConnect();
     const session = await getSession();
     
@@ -153,7 +162,7 @@ export async function DELETE(
     
     // Check if room exists and belongs to current user
     const room = await Room.findOne({
-      _id: params.roomId,
+      _id: roomId,
       createdBy: session.user.id
     });
     
@@ -162,7 +171,7 @@ export async function DELETE(
     }
     
     // Delete the room
-    await Room.findByIdAndDelete(params.roomId);
+    await Room.findByIdAndDelete(roomId);
     
     return NextResponse.json({ success: true });
   } catch (error) {

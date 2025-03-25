@@ -50,36 +50,24 @@ export async function POST(req: NextRequest) {
     // Determine if answer is correct
     const isCorrect = selectedOptionIndex === question.correctOptionIndex;
     
-    // Calculate points based on difficulty, time taken, and correctness
-    let pointsAwarded = 0;
+    // Calculate rupiah based on difficulty, time taken, and correctness
+    let rupiahAwarded = 0;
     
     if (isCorrect) {
-      // Base points for difficulty
-      switch (question.difficulty) {
-        case 'bronze':
-          pointsAwarded = 100;
-          break;
-        case 'silver':
-          pointsAwarded = 200;
-          break;
-        case 'gold':
-          pointsAwarded = 300;
-          break;
-        default:
-          pointsAwarded = 100;
-      }
+      // Base rupiah from question
+      rupiahAwarded = question.rupiah || 0;
       
       // Bonus for fast answers (up to 50% extra for answering in 3 seconds or less)
       const timeFactor = Math.max(0, 1 - (timeToAnswer / 15));
-      const timeBonus = Math.floor(pointsAwarded * 0.5 * timeFactor);
-      pointsAwarded += timeBonus;
+      const timeBonus = Math.floor(rupiahAwarded * 0.5 * timeFactor);
+      rupiahAwarded += timeBonus;
       
       // If correct, mark the question as disabled for all participants
       await Question.findByIdAndUpdate(questionId, { isDisabled: true });
       
-      // Update participant's total points
+      // Update participant's total rupiah
       await Participant.findByIdAndUpdate(participantId, {
-        $inc: { totalPoints: pointsAwarded },
+        $inc: { totalRupiah: rupiahAwarded },
       });
     }
     
@@ -91,19 +79,19 @@ export async function POST(req: NextRequest) {
       selectedOptionIndex,
       isCorrect,
       timeToAnswer,
-      pointsAwarded,
+      rupiahAwarded,
       answeredAt: new Date(),
     });
     
-    // Get updated total points
+    // Get updated total rupiah
     const updatedParticipant = await Participant.findById(participantId);
     
     return new NextResponse(JSON.stringify({
       isCorrect,
       correctOptionIndex: question.correctOptionIndex,
-      pointsAwarded,
+      rupiahAwarded,
       explanation: question.explanation,
-      newTotalPoints: updatedParticipant?.totalPoints || 0,
+      newTotalRupiah: updatedParticipant?.totalRupiah || 0,
     }), {
       status: 201,
       headers: { 'content-type': 'application/json' },

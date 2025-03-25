@@ -8,23 +8,23 @@ export interface IAnswer {
   selectedOptionIndex: number;
   isCorrect: boolean;
   timeToAnswer: number;
-  pointsAwarded: number;
+  rupiahAwarded: number;
   answeredAt: Date;
 }
 
 const AnswerSchema = new Schema<IAnswer>({
   questionId: {
-    type: Schema.Types.ObjectId,
+    type: String,
     ref: 'Question',
     required: true,
   },
   participantId: {
-    type: Schema.Types.ObjectId,
+    type: String,
     ref: 'Participant',
     required: true,
   },
   roomId: {
-    type: Schema.Types.ObjectId,
+    type: String,
     ref: 'Room',
     required: true,
   },
@@ -40,7 +40,7 @@ const AnswerSchema = new Schema<IAnswer>({
     type: Number,
     required: true,
   },
-  pointsAwarded: {
+  rupiahAwarded: {
     type: Number,
     required: true,
   },

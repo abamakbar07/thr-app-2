@@ -5,7 +5,7 @@ export interface IRedemption {
   rewardId: string;
   participantId: string;
   roomId: string;
-  pointsSpent: number;
+  rupiahSpent: number;
   claimedAt: Date;
   status: 'pending' | 'fulfilled' | 'cancelled';
   notes?: string;
@@ -13,21 +13,21 @@ export interface IRedemption {
 
 const RedemptionSchema = new Schema<IRedemption>({
   rewardId: {
-    type: Schema.Types.ObjectId,
+    type: String,
     ref: 'Reward',
     required: true,
   },
   participantId: {
-    type: Schema.Types.ObjectId,
+    type: String,
     ref: 'Participant',
     required: true,
   },
   roomId: {
-    type: Schema.Types.ObjectId,
+    type: String,
     ref: 'Room',
     required: true,
   },
-  pointsSpent: {
+  rupiahSpent: {
     type: Number,
     required: true,
   },

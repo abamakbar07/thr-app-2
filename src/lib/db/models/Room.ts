@@ -35,7 +35,7 @@ const RoomSchema = new Schema<IRoom>(
       unique: true,
     },
     createdBy: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
       required: true,
     },

@@ -9,7 +9,7 @@ const questionSchema = z.object({
   text: z.string().min(3),
   options: z.array(z.string()).min(2).max(6),
   correctOptionIndex: z.number().min(0),
-  points: z.number().min(1).max(100),
+  rupiah: z.number().min(100),
   difficulty: z.enum(['bronze', 'silver', 'gold']),
   category: z.string().min(1),
   explanation: z.string().min(1),
@@ -22,6 +22,9 @@ export async function GET(
   { params }: { params: { roomId: string } }
 ) {
   try {
+    // Extract roomId to handle it properly
+    const { roomId } = params;
+    
     await dbConnect();
     const session = await getSession();
     
@@ -31,7 +34,7 @@ export async function GET(
     
     // Verify that room exists and belongs to user
     const room = await Room.findOne({
-      _id: params.roomId,
+      _id: roomId,
       createdBy: session.user.id
     });
     
@@ -39,7 +42,7 @@ export async function GET(
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
     
-    const questions = await Question.find({ roomId: params.roomId })
+    const questions = await Question.find({ roomId })
       .sort({ createdAt: -1 });
     
     return NextResponse.json(questions);
@@ -57,6 +60,9 @@ export async function POST(
   { params }: { params: { roomId: string } }
 ) {
   try {
+    // Extract roomId to handle it properly
+    const { roomId } = params;
+    
     await dbConnect();
     const session = await getSession();
     
@@ -66,7 +72,7 @@ export async function POST(
     
     // Verify that room exists and belongs to user
     const room = await Room.findOne({
-      _id: params.roomId,
+      _id: roomId,
       createdBy: session.user.id
     });
     
@@ -88,7 +94,7 @@ export async function POST(
     // Create the question
     const question = await Question.create({
       ...body,
-      roomId: params.roomId,
+      roomId,
     });
     
     return NextResponse.json(question, { status: 201 });

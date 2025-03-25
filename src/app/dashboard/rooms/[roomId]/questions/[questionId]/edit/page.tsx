@@ -18,12 +18,15 @@ interface EditQuestionPageProps {
 }
 
 export default async function EditQuestionPage({ params }: EditQuestionPageProps) {
+  // Extract params values
+  const { roomId, questionId } = params;
+  
   await dbConnect();
   const session = await getSession();
 
   // Fetch room and verify ownership
   const room = await Room.findOne({ 
-    _id: params.roomId, 
+    _id: roomId, 
     createdBy: session?.user?.id 
   });
 
@@ -33,8 +36,8 @@ export default async function EditQuestionPage({ params }: EditQuestionPageProps
 
   // Fetch question
   const question = await Question.findOne({
-    _id: params.questionId,
-    roomId: params.roomId
+    _id: questionId,
+    roomId: roomId
   });
 
   if (!question) {
@@ -47,7 +50,7 @@ export default async function EditQuestionPage({ params }: EditQuestionPageProps
     text: question.text,
     options: question.options,
     correctOptionIndex: question.correctOptionIndex,
-    points: question.points,
+    rupiah: question.rupiah,
     difficulty: question.difficulty as 'bronze' | 'silver' | 'gold',
     category: question.category,
     explanation: question.explanation,
@@ -60,7 +63,7 @@ export default async function EditQuestionPage({ params }: EditQuestionPageProps
       <h1 className="text-2xl font-bold mb-6">Edit Question</h1>
       <p className="text-gray-500 mb-6">For room: {room.name}</p>
       <div className="bg-white shadow-sm rounded-lg p-6">
-        <QuestionForm roomId={params.roomId} questionData={questionData} />
+        <QuestionForm roomId={roomId} questionData={questionData} />
       </div>
     </div>
   );

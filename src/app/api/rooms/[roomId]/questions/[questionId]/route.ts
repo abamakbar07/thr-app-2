@@ -9,7 +9,7 @@ const questionUpdateSchema = z.object({
   text: z.string().min(3),
   options: z.array(z.string()).min(2).max(6),
   correctOptionIndex: z.number().min(0),
-  points: z.number().min(1).max(100),
+  rupiah: z.number().min(100),
   difficulty: z.enum(['bronze', 'silver', 'gold']),
   category: z.string().min(1),
   explanation: z.string().min(1),
@@ -22,6 +22,9 @@ export async function GET(
   { params }: { params: { roomId: string, questionId: string } }
 ) {
   try {
+    // Extract parameters to handle them properly
+    const { roomId, questionId } = params;
+    
     await dbConnect();
     const session = await getSession();
     
@@ -31,7 +34,7 @@ export async function GET(
     
     // Verify that room exists and belongs to user
     const room = await Room.findOne({
-      _id: params.roomId,
+      _id: roomId,
       createdBy: session.user.id
     });
     
@@ -40,8 +43,8 @@ export async function GET(
     }
     
     const question = await Question.findOne({
-      _id: params.questionId,
-      roomId: params.roomId
+      _id: questionId,
+      roomId
     });
     
     if (!question) {
@@ -63,6 +66,9 @@ export async function PUT(
   { params }: { params: { roomId: string, questionId: string } }
 ) {
   try {
+    // Extract parameters to handle them properly
+    const { roomId, questionId } = params;
+    
     await dbConnect();
     const session = await getSession();
     
@@ -72,7 +78,7 @@ export async function PUT(
     
     // Verify that room exists and belongs to user
     const room = await Room.findOne({
-      _id: params.roomId,
+      _id: roomId,
       createdBy: session.user.id
     });
     
@@ -93,8 +99,8 @@ export async function PUT(
     
     // Verify that question exists and belongs to the room
     const existingQuestion = await Question.findOne({
-      _id: params.questionId,
-      roomId: params.roomId
+      _id: questionId,
+      roomId
     });
     
     if (!existingQuestion) {
@@ -103,7 +109,7 @@ export async function PUT(
     
     // Update the question
     const updatedQuestion = await Question.findByIdAndUpdate(
-      params.questionId,
+      questionId,
       {
         ...body,
         updatedAt: new Date()
@@ -126,6 +132,9 @@ export async function DELETE(
   { params }: { params: { roomId: string, questionId: string } }
 ) {
   try {
+    // Extract parameters to handle them properly
+    const { roomId, questionId } = params;
+    
     await dbConnect();
     const session = await getSession();
     
@@ -135,7 +144,7 @@ export async function DELETE(
     
     // Verify that room exists and belongs to user
     const room = await Room.findOne({
-      _id: params.roomId,
+      _id: roomId,
       createdBy: session.user.id
     });
     
@@ -145,8 +154,8 @@ export async function DELETE(
     
     // Verify that question exists and belongs to the room
     const existingQuestion = await Question.findOne({
-      _id: params.questionId,
-      roomId: params.roomId
+      _id: questionId,
+      roomId
     });
     
     if (!existingQuestion) {
@@ -154,7 +163,7 @@ export async function DELETE(
     }
     
     // Delete the question
-    await Question.findByIdAndDelete(params.questionId);
+    await Question.findByIdAndDelete(questionId);
     
     return NextResponse.json({ success: true });
   } catch (error) {

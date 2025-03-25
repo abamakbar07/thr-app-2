@@ -8,6 +8,9 @@ export async function GET(
   { params }: { params: { roomId: string } }
 ) {
   try {
+    // Extract roomId to handle it properly
+    const { roomId } = params;
+    
     await dbConnect();
     const session = await getSession();
     
@@ -17,7 +20,7 @@ export async function GET(
     
     // Verify that room exists and belongs to user
     const room = await Room.findOne({
-      _id: params.roomId,
+      _id: roomId,
       createdBy: session.user.id
     });
     
@@ -26,18 +29,18 @@ export async function GET(
     }
     
     // Get participants and their answers for this room
-    const participants = await Participant.find({ roomId: params.roomId }).lean();
+    const participants = await Participant.find({ roomId }).lean();
     
     // Calculate scores by processing answers
     const participantScores = await Promise.all(
       participants.map(async (participant: any) => {
         const answers = await Answer.find({ 
           participantId: participant._id,
-          roomId: params.roomId,
+          roomId,
           isCorrect: true
         });
         
-        const totalPoints = answers.reduce((sum, answer: any) => sum + answer.pointsAwarded, 0);
+        const totalRupiah = answers.reduce((sum, answer: any) => sum + answer.rupiahAwarded, 0);
         const correctAnswers = answers.length;
         
         return {
@@ -45,7 +48,7 @@ export async function GET(
           name: participant.name,
           displayName: participant.displayName || participant.name,
           avatar: participant.avatar || null,
-          score: totalPoints,
+          score: totalRupiah,
           correctAnswers,
           lastAnsweredAt: answers.length > 0 
             ? Math.max(...answers.map((a: any) => a.createdAt.getTime())) 

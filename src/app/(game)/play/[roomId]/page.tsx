@@ -40,6 +40,20 @@ export default function GamePlay() {
       try {
         setIsLoading(true);
         
+        // Validate participant belongs to this room
+        const storedParticipant = localStorage.getItem('participant');
+        if (!storedParticipant) {
+          router.push('/join');
+          return;
+        }
+        
+        const parsedParticipant = JSON.parse(storedParticipant);
+        if (parsedParticipant.roomId !== roomId || parsedParticipant.id !== participantId) {
+          // Participant doesn't match or is trying to access wrong room
+          router.push('/join');
+          return;
+        }
+        
         // Fetch room details
         const roomResponse = await fetch(`/api/rooms/${roomId}?pid=${participantId}`);
         if (!roomResponse.ok) {

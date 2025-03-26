@@ -95,13 +95,20 @@ export default function JoinGame() {
         setParticipantData(participantData.participant);
         
         // Store participant info in localStorage
-        localStorage.setItem('participant', JSON.stringify({
+        const participantInfo = {
           id: participantData.participant._id,
           name: participantData.participant.name,
           roomId: roomData._id,
           roomName: roomData.name,
           accessCode: accessCode
-        }));
+        };
+        
+        // Ensure all required fields are present
+        if (!participantInfo.id || !participantInfo.roomId || !participantInfo.accessCode) {
+          throw new Error('Missing required participant information');
+        }
+        
+        localStorage.setItem('participant', JSON.stringify(participantInfo));
 
         // Reset loading state before navigation
         setIsLoading(false);
@@ -157,13 +164,20 @@ export default function JoinGame() {
       }
 
       // Store participant info in localStorage
-      localStorage.setItem('participant', JSON.stringify({
+      const participantInfo = {
         id: participantData.participant._id,
         name: participantData.participant.name,
         roomId: roomData._id,
         roomName: roomData.name,
         accessCode: accessCode
-      }));
+      };
+      
+      // Ensure all required fields are present
+      if (!participantInfo.id || !participantInfo.roomId || !participantInfo.accessCode) {
+        throw new Error('Missing required participant information');
+      }
+      
+      localStorage.setItem('participant', JSON.stringify(participantInfo));
 
       // Remove the temporary accessCodeId
       localStorage.removeItem('accessCodeId');

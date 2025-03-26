@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/db/connection";
 import { AccessCode, Room } from "@/lib/db/models";
-import mongoose from "mongoose";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,8 +12,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Access code and room code are required" }, { status: 400 });
     }
 
+    console.log('roomCode', roomCode);
+
     // Find the room
-    const room = await Room.findOne({ code: roomCode });
+    const room = await Room.findOne({ accessCode: roomCode });
     
     if (!room) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 });

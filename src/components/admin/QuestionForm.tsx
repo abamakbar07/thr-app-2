@@ -27,15 +27,15 @@ export default function QuestionForm({ roomId, questionData }: QuestionFormProps
   
   // Initialize form with empty values or existing question data
   const [formData, setFormData] = useState({
-    text: questionData?.text || '',
-    options: questionData?.options || ['', '', '', ''],
+    text: questionData?.text ?? '',
+    options: questionData?.options ?? ['', '', '', ''],
     correctOptionIndex: questionData?.correctOptionIndex ?? 0,
-    rupiah: questionData?.rupiah || 1000,
-    difficulty: questionData?.difficulty || 'bronze',
-    category: questionData?.category || '',
-    explanation: questionData?.explanation || '',
-    isDisabled: questionData?.isDisabled || false,
-    imageUrl: questionData?.imageUrl || '',
+    rupiah: questionData?.rupiah ?? 1000,
+    difficulty: questionData?.difficulty ?? 'bronze',
+    category: questionData?.category ?? '',
+    explanation: questionData?.explanation ?? '',
+    isDisabled: questionData?.isDisabled ?? false,
+    imageUrl: questionData?.imageUrl ?? '',
   });
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

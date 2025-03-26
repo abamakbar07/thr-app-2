@@ -66,7 +66,8 @@ export async function GET(request: NextRequest, { params }: { params: { roomId: 
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { roomId } = params;
+    const resolvedParams = await params;
+    const { roomId } = resolvedParams;
     
     // Verify if room exists
     const room = await Room.findById(roomId);

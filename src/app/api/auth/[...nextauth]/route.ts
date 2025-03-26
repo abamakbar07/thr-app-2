@@ -39,6 +39,7 @@ const authOptions: NextAuthOptions = {
           id: user._id.toString(),
           name: user.name,
           email: user.email,
+          role: user.role || 'user',
         };
       },
     }),
@@ -55,6 +56,7 @@ const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name,
+          role: user.role || 'user',
         };
       }
       
@@ -65,6 +67,7 @@ const authOptions: NextAuthOptions = {
         session.user.id = token.id;
         session.user.name = token.name || '';
         session.user.email = token.email || '';
+        session.user.role = token.role || 'user';
       }
       return session;
     },

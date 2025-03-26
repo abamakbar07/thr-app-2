@@ -18,9 +18,8 @@ interface RoomDetailPageProps {
 }
 
 export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
-  // Wait for params to be fully resolved
-  const resolvedParams = await params;
-  const roomId = resolvedParams.roomId;
+  // Get roomId from params
+  const { roomId } = await params;
   
   await dbConnect();
   const session = await getSession();

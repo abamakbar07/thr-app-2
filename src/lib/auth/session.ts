@@ -12,7 +12,7 @@ export async function getCurrentUser() {
   const session = await getSession();
   
   // Log the full session for debugging
-  console.log("Session in getCurrentUser:", JSON.stringify(session, null, 2));
+  // console.log("Session in getCurrentUser:", JSON.stringify(session, null, 2));
   
   // Check if session and user exist
   if (!session?.user) {

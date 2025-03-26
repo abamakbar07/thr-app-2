@@ -42,11 +42,6 @@ export default function GamePlay() {
   
   // Fetch room and questions
   useEffect(() => {
-    if (!participantId) {
-      router.push('/join');
-      return;
-    }
-    
     const fetchRoomData = async () => {
       try {
         setIsLoading(true);
@@ -59,17 +54,22 @@ export default function GamePlay() {
         }
         
         const parsedParticipant = JSON.parse(storedParticipant);
-        if (parsedParticipant.roomId !== roomId || parsedParticipant._id !== participantId) {
-          // Participant doesn't match or is trying to access wrong room
+        
+        // Check if room ID matches
+        if (parsedParticipant.roomId !== roomId) {
+          // Participant is trying to access wrong room
           router.push('/join');
           return;
         }
+        
+        // Get participant ID from either URL parameter or localStorage
+        const pid = participantId || parsedParticipant.id;
         
         // Set participant name from local storage
         setParticipantName(parsedParticipant.name || 'Player');
         
         // Fetch room details
-        const roomResponse = await fetch(`/api/rooms/${roomId}?pid=${participantId}`);
+        const roomResponse = await fetch(`/api/rooms/${roomId}?pid=${pid}`);
         if (!roomResponse.ok) {
           throw new Error('Failed to load room data');
         }
@@ -77,7 +77,7 @@ export default function GamePlay() {
         setRoom(roomData.room);
         
         // Fetch questions
-        const questionsResponse = await fetch(`/api/rooms/${roomId}/questions/active?pid=${participantId}`);
+        const questionsResponse = await fetch(`/api/rooms/${roomId}/questions/active?pid=${pid}`);
         if (!questionsResponse.ok) {
           throw new Error('Failed to load questions');
         }
@@ -85,7 +85,7 @@ export default function GamePlay() {
         setQuestions(questionsData.questions);
         
         // Fetch participant points
-        const participantResponse = await fetch(`/api/participants/${participantId}`);
+        const participantResponse = await fetch(`/api/participants/${pid}`);
         if (participantResponse.ok) {
           const participantData = await participantResponse.json();
           setRupiah(participantData.totalRupiah || 0);
@@ -103,7 +103,13 @@ export default function GamePlay() {
     
     // Set up polling for question updates
     const pollInterval = setInterval(() => {
-      fetch(`/api/rooms/${roomId}/questions/active?pid=${participantId}`)
+      const storedParticipant = localStorage.getItem('participant');
+      if (!storedParticipant) return;
+      
+      const parsedParticipant = JSON.parse(storedParticipant);
+      const pid = participantId || parsedParticipant.id;
+      
+      fetch(`/api/rooms/${roomId}/questions/active?pid=${pid}`)
         .then(res => res.json())
         .then(data => {
           setQuestions(data.questions);
@@ -111,7 +117,7 @@ export default function GamePlay() {
         .catch(err => console.error('Error polling questions:', err));
       
       // Also update participant points
-      fetch(`/api/participants/${participantId}`)
+      fetch(`/api/participants/${pid}`)
         .then(res => res.json())
         .then(data => {
           setRupiah(data.totalRupiah || 0);

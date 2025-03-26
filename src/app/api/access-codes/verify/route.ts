@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Access code and room code are required" }, { status: 400 });
     }
 
-    console.log('roomCode', roomCode);
+    console.log('Verifying accessCode:', accessCode, 'for roomCode:', roomCode);
 
     // Find the room
     const room = await Room.findOne({ accessCode: roomCode });
@@ -50,15 +50,28 @@ export async function POST(request: NextRequest) {
           roomId: room._id,
           accessCodeId: codeDoc._id,
           participantId: participant._id,
+          participantName: participant.name,
           isReturning: true
         }, { status: 200 });
+      } else {
+        // Access code has been used but participant record not found
+        // This could happen if participant was deleted but access code was marked as used
+        return NextResponse.json({ 
+          message: "Access code verified but original participant not found", 
+          roomId: room._id,
+          accessCodeId: codeDoc._id,
+          isReturning: false,
+          error: "Access code has been used but participant not found"
+        }, { status: 400 });
       }
     }
     
+    // New access code, never used before
     return NextResponse.json({ 
-      message: "Access code verified successfully", 
+      message: "Access code verified successfully for new participant", 
       roomId: room._id,
-      accessCodeId: codeDoc._id
+      accessCodeId: codeDoc._id,
+      isReturning: false
     }, { status: 200 });
   } catch (error) {
     console.error("Error verifying access code:", error);

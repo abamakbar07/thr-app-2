@@ -44,6 +44,7 @@ export default function JoinGame() {
     if (!previousGameData) return;
     
     setIsLoading(true);
+    setError('');
     
     try {
       // Fetch the room details first to validate
@@ -53,9 +54,10 @@ export default function JoinGame() {
       }
       
       const roomData = await roomResponse.json();
+      console.log('Room data:', roomData);
       
       // Verify the access code with the API
-      const accessCodeResponse = await fetch(`/api/access-codes/verify`, {
+      const verifyResponse = await fetch(`/api/access-codes/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,14 +68,15 @@ export default function JoinGame() {
         }),
       });
       
-      if (!accessCodeResponse.ok) {
-        throw new Error('Previous access code is no longer valid');
+      if (!verifyResponse.ok) {
+        const errorData = await verifyResponse.json();
+        throw new Error(errorData.error || 'Previous access code is no longer valid');
       }
       
-      const accessCodeData = await accessCodeResponse.json();
-      console.log('Access code verification response:', accessCodeData);
+      const verifyData = await verifyResponse.json();
+      console.log('Verify response:', verifyData);
       
-      // Use the participant API to rejoin with the previous access code
+      // Join/rejoin the participant
       const joinResponse = await fetch('/api/participants', {
         method: 'POST',
         headers: {
@@ -83,14 +86,14 @@ export default function JoinGame() {
           roomId: previousGameData.roomId,
           name: previousGameData.name || 'Player',
           accessCode: previousGameData.accessCode,
-          accessCodeId: accessCodeData.accessCodeId,
-          // Only include participantId if it exists in response
-          ...(accessCodeData.participantId && { participantId: accessCodeData.participantId })
+          accessCodeId: verifyData.accessCodeId,
+          ...(verifyData.participantId && { participantId: verifyData.participantId })
         }),
       });
       
       if (!joinResponse.ok) {
-        throw new Error('Failed to rejoin the game');
+        const errorData = await joinResponse.json();
+        throw new Error(errorData.message || 'Failed to rejoin the game');
       }
       
       const participantData = await joinResponse.json();
@@ -106,20 +109,19 @@ export default function JoinGame() {
         rejoining: true
       };
       
-      localStorage.setItem('participant', JSON.stringify(participantInfo));
-      
-      // Clear the temporary storage
+      // Remove temporary storage first
       localStorage.removeItem('lastAccessCode');
       localStorage.removeItem('lastRoomId');
       localStorage.removeItem('lastParticipantName');
       
-      setIsLoading(false);
+      // Then store the participant info
+      localStorage.setItem('participant', JSON.stringify(participantInfo));
       
-      // Show welcome message
+      setIsLoading(false);
       toast.success('Welcome back! Continuing your game progress.');
       
-      // Redirect to the game - use replace instead of push for more reliable navigation
-      window.location.href = `/play/${previousGameData.roomId}`;
+      // Use direct page navigation instead of Next.js router
+      window.location.href = `/play/${previousGameData.roomId}?pid=${participantInfo.id}`;
     } catch (error: any) {
       console.error('Error continuing previous game:', error);
       setError(error.message || 'Failed to continue previous game');
@@ -177,6 +179,8 @@ export default function JoinGame() {
     setIsLoading(true);
 
     try {
+      console.log('Validating access code:', accessCode, 'for room:', roomCode);
+      
       // Validate access code
       const response = await fetch(`/api/access-codes/verify`, {
         method: 'POST',
@@ -189,78 +193,76 @@ export default function JoinGame() {
         }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Invalid access code');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Invalid access code');
       }
 
-      // Store the access code ID for later use when joining
-      const accessCodeId = data.accessCodeId;
+      const verifyData = await response.json();
+      console.log('Verify response:', verifyData);
 
-      // Check if participant already exists with this access code
-      const participantResponse = await fetch(`/api/participants/validate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          roomId: roomData._id,
-          accessCode: accessCode,
-        }),
-      });
+      // Check if this is a returning participant
+      const isReturning = verifyData.isReturning || false;
+      const participantId = verifyData.participantId;
 
-      const participantData = await participantResponse.json();
-
-      if (participantResponse.ok && participantData.participant) {
-        // Existing participant, store data and proceed to game
-        setParticipantData(participantData.participant);
+      if (isReturning && participantId) {
+        // This is a returning participant with an existing record
+        console.log('Returning participant detected');
         
-        // If participant has a name, use it directly
-        if (participantData.participant.name) {
-          // Store participant info in localStorage
-          const participantInfo = {
-            id: participantData.participant._id,
-            name: participantData.participant.name,
+        // Join the room directly with the existing participant ID
+        const joinResponse = await fetch('/api/participants', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
             roomId: roomData._id,
-            roomName: roomData.name,
+            name: verifyData.participantName || 'Returning Player',
             accessCode: accessCode,
-            rejoining: true // Flag to indicate this is a rejoining participant
-          };
-          
-          // Ensure all required fields are present
-          if (!participantInfo.id || !participantInfo.roomId || !participantInfo.accessCode) {
-            throw new Error('Missing required participant information');
-          }
-          
-          localStorage.setItem('participant', JSON.stringify(participantInfo));
-          toast.success('Welcome back! Continuing your game progress.');
+            accessCodeId: verifyData.accessCodeId,
+            participantId: participantId
+          }),
+        });
 
-          // Reset loading state before navigation
-          setIsLoading(false);
-
-          // Redirect to the game room
-          router.push(`/play/${roomData._id}`);
-        } else {
-          // Has participant record but needs name update
-          // Go to name input step but pre-fill with previous name if available
-          if (participantData.participant.name) {
-            setName(participantData.participant.name);
-          }
-          localStorage.setItem('participantId', participantData.participant._id);
-          localStorage.setItem('accessCodeId', accessCodeId);
-          setStep(3);
-          setIsLoading(false);
+        if (!joinResponse.ok) {
+          const errorData = await joinResponse.json();
+          throw new Error(errorData.message || 'Failed to rejoin the game');
         }
-      } else {
-        // First-time participant, store accessCodeId for registration
-        localStorage.setItem('accessCodeId', accessCodeId);
+
+        const participantData = await joinResponse.json();
+        console.log('Join response for returning participant:', participantData);
+
+        // Store participant info in localStorage
+        const participantInfo = {
+          id: participantData.participant._id,
+          name: participantData.participant.name,
+          roomId: roomData._id,
+          roomName: roomData.name,
+          accessCode: accessCode,
+          rejoining: true
+        };
         
-        // Go to name input step
-        setStep(3);
+        localStorage.setItem('participant', JSON.stringify(participantInfo));
+        
+        // Show success message
+        toast.success('Welcome back! Continuing your game progress.');
+        
+        // Reset loading state before navigation
         setIsLoading(false);
+        
+        // Use direct navigation for more reliability
+        window.location.href = `/play/${roomData._id}?pid=${participantInfo.id}`;
+        return;
       }
+      
+      // Store the access code ID for later use when joining as a new participant
+      localStorage.setItem('accessCodeId', verifyData.accessCodeId);
+      
+      // Proceed to name input step for new participants
+      setStep(3);
+      setIsLoading(false);
     } catch (error: any) {
+      console.error('Error validating access code:', error);
       setError(error.message || 'Failed to validate access code');
       setIsLoading(false);
     }
@@ -277,11 +279,16 @@ export default function JoinGame() {
     setIsLoading(true);
 
     try {
-      // Retrieve stored accessCodeId if available
+      console.log('Joining game as new participant');
+      
+      // Retrieve stored accessCodeId
       const accessCodeId = localStorage.getItem('accessCodeId');
-      const participantId = localStorage.getItem('participantId');
+      
+      if (!accessCodeId) {
+        throw new Error('Missing access code information. Please try again.');
+      }
 
-      // Join the room as a participant
+      // Join the room as a new participant
       const participantResponse = await fetch('/api/participants', {
         method: 'POST',
         headers: {
@@ -291,16 +298,17 @@ export default function JoinGame() {
           roomId: roomData._id,
           name: name,
           accessCode: accessCode,
-          accessCodeId: accessCodeId,
-          participantId: participantId // Include participant ID for rejoining
+          accessCodeId: accessCodeId
         }),
       });
 
-      const participantData = await participantResponse.json();
-
       if (!participantResponse.ok) {
-        throw new Error(participantData.message || 'Failed to join the game');
+        const errorData = await participantResponse.json();
+        throw new Error(errorData.message || 'Failed to join the game');
       }
+
+      const participantData = await participantResponse.json();
+      console.log('Join response for new participant:', participantData);
 
       // Store participant info in localStorage
       const participantInfo = {
@@ -309,33 +317,25 @@ export default function JoinGame() {
         roomId: roomData._id,
         roomName: roomData.name,
         accessCode: accessCode,
-        rejoining: participantId ? true : false // Flag if this is a rejoining participant
+        rejoining: false
       };
       
-      // Ensure all required fields are present
-      if (!participantInfo.id || !participantInfo.roomId || !participantInfo.accessCode) {
-        throw new Error('Missing required participant information');
-      }
+      // Remove the temporary accessCodeId
+      localStorage.removeItem('accessCodeId');
       
+      // Store the participant info
       localStorage.setItem('participant', JSON.stringify(participantInfo));
 
-      // Remove the temporary data
-      localStorage.removeItem('accessCodeId');
-      localStorage.removeItem('participantId');
-
-      // Show appropriate message
-      if (participantInfo.rejoining) {
-        toast.success('Welcome back! Continuing your game progress.');
-      } else {
-        toast.success('Successfully joined the game!');
-      }
+      // Show welcome message
+      toast.success('Successfully joined the game!');
 
       // Reset loading state before navigation
       setIsLoading(false);
       
-      // Redirect to the game room
-      router.push(`/play/${roomData._id}`);
+      // Use direct navigation for more reliability
+      window.location.href = `/play/${roomData._id}?pid=${participantInfo.id}`;
     } catch (error: any) {
+      console.error('Error joining game:', error);
       setError(error.message || 'Failed to join the game');
       setIsLoading(false);
     }

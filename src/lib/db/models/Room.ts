@@ -42,6 +42,7 @@ const RoomSchema = new Schema<IRoom>(
     isActive: {
       type: Boolean,
       default: true,
+      index: true,
     },
     startTime: {
       type: Date,
@@ -74,5 +75,7 @@ const RoomSchema = new Schema<IRoom>(
     timestamps: true,
   }
 );
+
+RoomSchema.index({ startTime: 1, endTime: 1 });
 
 export default mongoose.models.Room || mongoose.model<IRoom>('Room', RoomSchema); 

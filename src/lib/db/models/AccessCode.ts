@@ -18,15 +18,18 @@ const AccessCodeSchema = new Schema<IAccessCode>(
       required: [true, "Access code is required"],
       unique: true,
       trim: true,
+      index: true,
     },
     isActive: {
       type: Boolean,
       default: true,
+      index: true,
     },
     roomId: {
       type: Schema.Types.ObjectId,
       ref: "Room",
       required: [true, "Room is required"],
+      index: true,
     },
     createdBy: {
       type: Schema.Types.ObjectId,
@@ -47,6 +50,10 @@ const AccessCodeSchema = new Schema<IAccessCode>(
     timestamps: true,
   }
 );
+
+// Compound indexes for common queries
+AccessCodeSchema.index({ roomId: 1, isActive: 1 });
+AccessCodeSchema.index({ usedBy: 1, isActive: 1 });
 
 export const AccessCode = (mongoose.models.AccessCode ||
   mongoose.model<IAccessCode>("AccessCode", AccessCodeSchema)) as Model<IAccessCode>;

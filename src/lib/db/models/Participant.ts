@@ -2,7 +2,7 @@ import mongoose, { Schema } from 'mongoose';
 
 export interface IParticipant {
   _id?: string;
-  roomId: string;
+  roomId: mongoose.Types.ObjectId;
   name: string;
   joinedAt: Date;
   totalRupiah: number;
@@ -12,9 +12,10 @@ export interface IParticipant {
 
 const ParticipantSchema = new Schema<IParticipant>({
   roomId: {
-    type: String,
+    type: Schema.Types.ObjectId,
     ref: 'Room',
     required: true,
+    index: true,
   },
   name: {
     type: String,
@@ -27,6 +28,7 @@ const ParticipantSchema = new Schema<IParticipant>({
   totalRupiah: {
     type: Number,
     default: 0,
+    min: 0,
   },
   accessCode: {
     type: String,
@@ -37,7 +39,12 @@ const ParticipantSchema = new Schema<IParticipant>({
     type: String,
     enum: ['active', 'inactive'],
     default: 'active',
+    index: true,
   },
-});
+}, { timestamps: true });
+
+// Compound index for leaderboard queries
+ParticipantSchema.index({ roomId: 1, totalRupiah: -1 });
+ParticipantSchema.index({ roomId: 1, currentStatus: 1 });
 
 export default mongoose.models.Participant || mongoose.model<IParticipant>('Participant', ParticipantSchema); 

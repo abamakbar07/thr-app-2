@@ -2,9 +2,9 @@ import mongoose, { Schema } from 'mongoose';
 
 export interface IAnswer {
   _id?: string;
-  questionId: string;
-  participantId: string;
-  roomId: string;
+  questionId: mongoose.Types.ObjectId;
+  participantId: mongoose.Types.ObjectId;
+  roomId: mongoose.Types.ObjectId;
   selectedOptionIndex: number;
   isCorrect: boolean;
   timeToAnswer: number;
@@ -14,19 +14,20 @@ export interface IAnswer {
 
 const AnswerSchema = new Schema<IAnswer>({
   questionId: {
-    type: String,
+    type: Schema.Types.ObjectId,
     ref: 'Question',
     required: true,
   },
   participantId: {
-    type: String,
+    type: Schema.Types.ObjectId,
     ref: 'Participant',
     required: true,
   },
   roomId: {
-    type: String,
+    type: Schema.Types.ObjectId,
     ref: 'Room',
     required: true,
+    index: true,
   },
   selectedOptionIndex: {
     type: Number,
@@ -35,19 +36,27 @@ const AnswerSchema = new Schema<IAnswer>({
   isCorrect: {
     type: Boolean,
     required: true,
+    index: true,
   },
   timeToAnswer: {
     type: Number,
     required: true,
+    min: 0,
   },
   rupiahAwarded: {
     type: Number,
     required: true,
+    min: 0,
   },
   answeredAt: {
     type: Date,
     default: Date.now,
   },
-});
+}, { timestamps: true });
+
+// Create compound indexes for common queries
+AnswerSchema.index({ participantId: 1, questionId: 1 }, { unique: true }); // Ensure one answer per question per participant
+AnswerSchema.index({ roomId: 1, questionId: 1 });
+AnswerSchema.index({ roomId: 1, participantId: 1 });
 
 export default mongoose.models.Answer || mongoose.model<IAnswer>('Answer', AnswerSchema); 

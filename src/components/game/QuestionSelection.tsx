@@ -30,7 +30,7 @@ export function QuestionSelection({
   
   useEffect(() => {
     // Extract unique categories from questions
-    const uniqueCategories = [...new Set(questions.map(q => q.category))];
+    const uniqueCategories = Array.from(new Set(questions.map(q => q.category)));
     setCategories(uniqueCategories);
   }, [questions]);
   

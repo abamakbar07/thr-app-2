@@ -123,7 +123,7 @@ export function RewardSelection({
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {rewardsByTier[tier as keyof typeof rewardsByTier].map(reward => {
-                  const isAffordable = participantPoints >= reward.pointsRequired;
+                  const isAffordable = participantPoints >= reward.rupiahRequired;
                   const isAvailable = reward.remainingQuantity > 0;
                   const canClaim = isAffordable && isAvailable;
                   
@@ -148,7 +148,7 @@ export function RewardSelection({
                           </div>
                         )}
                         <div className={`absolute top-2 right-2 ${info.color} text-white px-2 py-1 rounded-full text-xs font-medium`}>
-                          {reward.pointsRequired} pts
+                          {reward.rupiahRequired} pts
                         </div>
                       </div>
                       
@@ -175,7 +175,7 @@ export function RewardSelection({
                             : !isAvailable 
                               ? 'Sold Out' 
                               : !isAffordable 
-                                ? `Need ${reward.pointsRequired - participantPoints} more points` 
+                                ? `Need ${reward.rupiahRequired - participantPoints} more points` 
                                 : 'Claim Reward'}
                         </button>
                       </div>

@@ -78,7 +78,7 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
           </Link>
           <h1 className="text-2xl font-bold text-gray-800">{room.name}</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Room Code: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{room.code}</span>
+            Room Code: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{room.accessCode}</span>
           </p>
         </div>
         <div className="flex space-x-3">

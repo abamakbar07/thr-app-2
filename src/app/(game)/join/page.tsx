@@ -1,12 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 
 export default function JoinGame() {
-  const router = useRouter();
   const [step, setStep] = useState(1);
   const [roomCode, setRoomCode] = useState('');
   const [accessCode, setAccessCode] = useState('');

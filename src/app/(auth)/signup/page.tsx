@@ -49,8 +49,8 @@ export default function SignUp() {
       }
 
       router.push('/signin?success=Account created successfully');
-    } catch (error: any) {
-      setError(error.message || 'Failed to create account');
+    } catch (error) {
+      setError((error as Error).message || 'Failed to create account');
       setIsLoading(false);
     }
   };

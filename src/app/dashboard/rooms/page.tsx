@@ -26,7 +26,7 @@ interface RoomType {
 }
 
 // MongoDB Document type
-interface MongoRoom {
+type MongoRoom = {
   _id: mongoose.Types.ObjectId;
   name: string;
   description: string;
@@ -43,7 +43,7 @@ interface MongoRoom {
     allowRetries: boolean;
     showCorrectAnswers: boolean;
   };
-}
+};
 
 export default async function RoomsPage() {
   await dbConnect();
@@ -96,7 +96,7 @@ export default async function RoomsPage() {
     return (
       <div>
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Game Rooms</h1>
+          <h1 className="text-2xl font-medium text-gray-800">Game Rooms</h1>
           <Link 
             href="/dashboard/rooms/new" 
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-[#128C7E] hover:bg-[#075E54] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#128C7E] transition-colors duration-150"

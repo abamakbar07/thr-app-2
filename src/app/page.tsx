@@ -1,11 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  const router = useRouter();
-  
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-teal-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">

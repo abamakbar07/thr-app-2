@@ -33,6 +33,8 @@ export default async function SessionsPage() {
     })
   );
   
+  const message = 'This is an example of an escaped entity: &apos;Hello&apos;';
+  
   return (
     <div>
       <div className="flex justify-between items-center mb-6">

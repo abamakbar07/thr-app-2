@@ -20,11 +20,6 @@ export default function AccessCodeGenerator({ roomId }: AccessCodeGeneratorProps
   const [isGenerating, setIsGenerating] = useState(false);
   const [newAccessCode, setNewAccessCode] = useState('');
 
-  // Fetch existing access codes
-  useEffect(() => {
-    fetchAccessCodes();
-  }, [roomId]);
-
   const fetchAccessCodes = async () => {
     setIsLoading(true);
     try {
@@ -42,6 +37,10 @@ export default function AccessCodeGenerator({ roomId }: AccessCodeGeneratorProps
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchAccessCodes();
+  }, [fetchAccessCodes]);
 
   const generateAccessCode = async () => {
     setIsGenerating(true);

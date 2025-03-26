@@ -51,7 +51,7 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
   // Calculate room status
   const now = new Date();
   let status = "Upcoming";
-  let statusColor = "bg-blue-100 text-blue-800";
+  let statusColor: string = "bg-blue-100 text-blue-800";
   
   if (now > new Date(room.endTime)) {
     status = "Ended";

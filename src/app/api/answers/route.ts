@@ -106,9 +106,9 @@ export async function POST(req: NextRequest) {
       rupiahAwarded = question.rupiah || 0;
       
       // Bonus for fast answers (up to 50% extra for answering in 3 seconds or less)
-      const timeFactor = Math.max(0, 1 - (timeToAnswer / 15));
-      const timeBonus = Math.floor(rupiahAwarded * 0.5 * timeFactor);
-      rupiahAwarded += timeBonus;
+      // const timeFactor = Math.max(0, 1 - (timeToAnswer / 15));
+      // const timeBonus = Math.floor(rupiahAwarded * 0.5 * timeFactor);
+      // rupiahAwarded += timeBonus;
       
       // Mark the question as disabled if answered correctly
       await Question.findByIdAndUpdate(

@@ -1,50 +1,81 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db/connection';
 import { Question, Participant, Answer } from '@/lib/db/models';
+import mongoose from 'mongoose';
+import { z } from 'zod';
+
+// Schema validation for answer submission
+const answerSchema = z.object({
+  questionId: z.string().min(1),
+  participantId: z.string().min(1),
+  roomId: z.string().min(1),
+  selectedOptionIndex: z.number().int().min(0),
+  timeToAnswer: z.number().positive()
+});
 
 export async function POST(req: NextRequest) {
+  // Start MongoDB session for transaction
+  const session = await mongoose.startSession();
+  
   try {
     await dbConnect();
     
-    const { questionId, participantId, roomId, selectedOptionIndex, timeToAnswer } = await req.json();
+    // Parse and validate request body
+    const body = await req.json();
+    const validation = answerSchema.safeParse(body);
     
-    if (!questionId || !participantId || !roomId || selectedOptionIndex === undefined || !timeToAnswer) {
-      return new NextResponse(JSON.stringify({ error: 'Missing required fields' }), {
-        status: 400,
-        headers: { 'content-type': 'application/json' },
-      });
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: validation.error.format() },
+        { status: 400 }
+      );
     }
     
+    const { questionId, participantId, roomId, selectedOptionIndex, timeToAnswer } = validation.data;
+    
+    // Convert string IDs to ObjectIds
+    const questionObjectId = new mongoose.Types.ObjectId(questionId);
+    const participantObjectId = new mongoose.Types.ObjectId(participantId);
+    const roomObjectId = new mongoose.Types.ObjectId(roomId);
+    
+    // Begin transaction
+    session.startTransaction();
+    
     // Get the question to check the answer
-    const question = await Question.findById(questionId);
+    const question = await Question.findById(questionObjectId).session(session);
     if (!question) {
-      return new NextResponse(JSON.stringify({ error: 'Question not found' }), {
-        status: 404,
-        headers: { 'content-type': 'application/json' },
-      });
+      await session.abortTransaction();
+      return NextResponse.json({ error: 'Question not found' }, { status: 404 });
     }
     
     // Check if the participant exists
-    const participant = await Participant.findById(participantId);
+    const participant = await Participant.findById(participantObjectId).session(session);
     if (!participant) {
-      return new NextResponse(JSON.stringify({ error: 'Participant not found' }), {
-        status: 404,
-        headers: { 'content-type': 'application/json' },
-      });
+      await session.abortTransaction();
+      return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
     }
     
-    // Check if this question was already answered correctly by this participant
-    const existingCorrectAnswer = await Answer.findOne({
-      questionId,
-      participantId,
-      isCorrect: true,
-    });
+    // Verify that the question belongs to the specified room
+    if (question.roomId.toString() !== roomId) {
+      await session.abortTransaction();
+      return NextResponse.json({ error: 'Question does not belong to the specified room' }, { status: 400 });
+    }
     
-    if (existingCorrectAnswer) {
-      return new NextResponse(JSON.stringify({ error: 'Question already answered correctly' }), {
-        status: 400,
-        headers: { 'content-type': 'application/json' },
-      });
+    // Check if this question was already answered by this participant
+    const existingAnswer = await Answer.findOne({
+      questionId: questionObjectId,
+      participantId: participantObjectId,
+    }).session(session);
+    
+    if (existingAnswer) {
+      await session.abortTransaction();
+      return NextResponse.json({ error: 'Question already answered by this participant' }, { status: 400 });
+    }
+    
+    // Verify the selected option is valid
+    if (selectedOptionIndex < 0 || selectedOptionIndex >= question.options.length) {
+      await session.abortTransaction();
+      return NextResponse.json({ error: 'Invalid option selected' }, { status: 400 });
     }
     
     // Determine if answer is correct
@@ -62,45 +93,52 @@ export async function POST(req: NextRequest) {
       const timeBonus = Math.floor(rupiahAwarded * 0.5 * timeFactor);
       rupiahAwarded += timeBonus;
       
-      // If correct, mark the question as disabled for all participants
-      await Question.findByIdAndUpdate(questionId, { isDisabled: true });
-      
       // Update participant's total rupiah
-      await Participant.findByIdAndUpdate(participantId, {
-        $inc: { totalRupiah: rupiahAwarded },
-      });
+      await Participant.findByIdAndUpdate(
+        participantObjectId, 
+        { $inc: { totalRupiah: rupiahAwarded } },
+        { session }
+      );
     }
     
     // Record the answer
-    const answer = await Answer.create({
-      questionId,
-      participantId,
-      roomId,
+    const answer = await Answer.create([{
+      questionId: questionObjectId,
+      participantId: participantObjectId,
+      roomId: roomObjectId,
       selectedOptionIndex,
       isCorrect,
       timeToAnswer,
       rupiahAwarded,
       answeredAt: new Date(),
-    });
+    }], { session });
     
     // Get updated total rupiah
-    const updatedParticipant = await Participant.findById(participantId);
+    const updatedParticipant = await Participant.findById(participantObjectId).session(session);
     
-    return new NextResponse(JSON.stringify({
+    // Commit the transaction
+    await session.commitTransaction();
+    
+    return NextResponse.json({
       isCorrect,
       correctOptionIndex: question.correctOptionIndex,
       rupiahAwarded,
       explanation: question.explanation,
       newTotalRupiah: updatedParticipant?.totalRupiah || 0,
-    }), {
-      status: 201,
-      headers: { 'content-type': 'application/json' },
-    });
+    }, { status: 201 });
   } catch (error) {
+    // Abort transaction on error
+    await session.abortTransaction();
+    
     console.error('Error processing answer:', error);
-    return new NextResponse(JSON.stringify({ error: 'Failed to process answer' }), {
-      status: 500,
-      headers: { 'content-type': 'application/json' },
-    });
+    
+    if (error instanceof mongoose.Error.ValidationError) {
+      return NextResponse.json({ error: 'Validation error', details: error.message }, { status: 400 });
+    }
+    
+    return NextResponse.json({ error: 'Failed to process answer' }, { status: 500 });
+  } finally {
+    // End session
+    session.endSession();
   }
 } 

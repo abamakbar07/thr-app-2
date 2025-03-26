@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getSession } from '@/lib/auth/session';
 import dbConnect from '@/lib/db/connection';
 import { Room } from '@/lib/db/models';
+import mongoose from 'mongoose';
 
 const roomUpdateSchema = z.object({
   name: z.string().min(3).max(100),
@@ -36,6 +37,11 @@ export async function GET(
   try {
     // Extract roomId to handle it properly
     const { roomId } = params;
+    
+    // Validate roomId
+    if (!mongoose.isValidObjectId(roomId)) {
+      return NextResponse.json({ error: 'Invalid room ID format' }, { status: 400 });
+    }
     
     await dbConnect();
     
@@ -89,6 +95,11 @@ export async function PUT(
     // Extract roomId to handle it properly
     const { roomId } = params;
     
+    // Validate roomId
+    if (!mongoose.isValidObjectId(roomId)) {
+      return NextResponse.json({ error: 'Invalid room ID format' }, { status: 400 });
+    }
+    
     await dbConnect();
     const session = await getSession();
     
@@ -117,27 +128,41 @@ export async function PUT(
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
     
+    // Prepare update data with properly nested settings
+    const updateData = {
+      name: body.name,
+      description: body.description,
+      startTime: new Date(body.startTime),
+      endTime: new Date(body.endTime),
+      isActive: body.isActive,
+      'settings.timePerQuestion': body.timePerQuestion,
+      'settings.showLeaderboard': body.showLeaderboard,
+      'settings.allowRetries': body.allowRetries,
+      'settings.showCorrectAnswers': body.showCorrectAnswers
+    };
+    
     // Update the room
     const updatedRoom = await Room.findByIdAndUpdate(
       roomId,
-      {
-        name: body.name,
-        description: body.description,
-        startTime: new Date(body.startTime),
-        endTime: new Date(body.endTime),
-        timePerQuestion: body.timePerQuestion,
-        showLeaderboard: body.showLeaderboard,
-        allowRetries: body.allowRetries,
-        showCorrectAnswers: body.showCorrectAnswers,
-        isActive: body.isActive,
-        updatedAt: new Date()
-      },
-      { new: true }
+      updateData,
+      { new: true, runValidators: true }
     );
+    
+    if (!updatedRoom) {
+      return NextResponse.json({ error: 'Failed to update room' }, { status: 500 });
+    }
     
     return NextResponse.json(updatedRoom);
   } catch (error) {
     console.error('Error updating room:', error);
+    
+    if (error instanceof mongoose.Error.ValidationError) {
+      return NextResponse.json(
+        { error: 'Validation error', details: error.message },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Failed to update room' },
       { status: 500 }
@@ -152,6 +177,11 @@ export async function DELETE(
   try {
     // Extract roomId to handle it properly
     const { roomId } = params;
+    
+    // Validate roomId
+    if (!mongoose.isValidObjectId(roomId)) {
+      return NextResponse.json({ error: 'Invalid room ID format' }, { status: 400 });
+    }
     
     await dbConnect();
     const session = await getSession();

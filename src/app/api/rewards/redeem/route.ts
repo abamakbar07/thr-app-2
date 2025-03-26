@@ -4,44 +4,57 @@ import { Reward, Participant, Redemption } from '@/lib/db/models';
 import mongoose from 'mongoose';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
+import { z } from 'zod';
 
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-}
+// Schema validation for redemption
+const redemptionSchema = z.object({
+  rewardId: z.string().min(1),
+  participantId: z.string().min(1),
+});
 
 export async function POST(req: NextRequest) {
+  // Start MongoDB session for transaction
+  const dbSession = await mongoose.startSession();
+  
   try {
+    // Authenticate admin/organizer
     const authSession = await getServerSession(authOptions);
     if (!authSession?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = authSession.user as User;
-    
-    if (!user || !user._id) {
-      return NextResponse.json({ error: 'User authentication issue - Please sign out and sign in again' }, { status: 401 });
-    }
-    
     await dbConnect();
     
-    const { rewardId, participantId } = await req.json();
+    // Parse and validate request body
+    const body = await req.json();
+    const validation = redemptionSchema.safeParse(body);
     
-    if (!rewardId || !participantId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: validation.error.format() },
+        { status: 400 }
+      );
     }
     
-    // Start a session for transaction
-    const dbSession = await mongoose.startSession();
+    const { rewardId, participantId } = validation.data;
+    
+    // Convert string IDs to ObjectIds
+    const rewardObjectId = new mongoose.Types.ObjectId(rewardId);
+    const participantObjectId = new mongoose.Types.ObjectId(participantId);
+    
+    // Begin transaction
     dbSession.startTransaction();
     
     try {
       // Find the reward and check if it's available
-      const reward = await Reward.findById(rewardId).session(dbSession);
+      const reward = await Reward.findById(rewardObjectId).session(dbSession);
       
       if (!reward) {
         throw new Error('Reward not found');
+      }
+      
+      if (!reward.isActive) {
+        throw new Error('Reward is not active');
       }
       
       if (reward.remainingQuantity <= 0) {
@@ -49,26 +62,31 @@ export async function POST(req: NextRequest) {
       }
       
       // Find the participant
-      const participant = await Participant.findById(participantId).session(dbSession);
+      const participant = await Participant.findById(participantObjectId).session(dbSession);
       
       if (!participant) {
         throw new Error('Participant not found');
       }
       
+      // Verify participant is in the same room as the reward
+      if (participant.roomId.toString() !== reward.roomId.toString()) {
+        throw new Error('Participant and reward are not in the same room');
+      }
+      
       // Check if the participant has enough rupiah
       if (participant.totalRupiah < reward.rupiahRequired) {
-        throw new Error('Not enough Rupiah to claim this reward');
+        throw new Error(`Not enough Rupiah to claim this reward (needed: ${reward.rupiahRequired}, available: ${participant.totalRupiah})`);
       }
       
       // Deduct rupiah and update remaining quantity
-      await Participant.findByIdAndUpdate(
-        participantId,
+      const updatedParticipant = await Participant.findByIdAndUpdate(
+        participantObjectId,
         { $inc: { totalRupiah: -reward.rupiahRequired } },
-        { session: dbSession }
+        { session: dbSession, new: true }
       );
       
       await Reward.findByIdAndUpdate(
-        rewardId,
+        rewardObjectId,
         { $inc: { remainingQuantity: -1 } },
         { session: dbSession }
       );
@@ -76,8 +94,8 @@ export async function POST(req: NextRequest) {
       // Create redemption record
       const redemption = await Redemption.create(
         [{
-          rewardId,
-          participantId,
+          rewardId: rewardObjectId,
+          participantId: participantObjectId,
           roomId: reward.roomId,
           rupiahSpent: reward.rupiahRequired,
           claimedAt: new Date(),
@@ -93,7 +111,7 @@ export async function POST(req: NextRequest) {
         success: true,
         message: 'Reward successfully redeemed',
         redemptionId: redemption[0]._id,
-        newRupiahTotal: participant.totalRupiah - reward.rupiahRequired
+        newRupiahTotal: updatedParticipant.totalRupiah
       }, { status: 200 });
     } catch (error: any) {
       // Abort the transaction on error
@@ -103,15 +121,29 @@ export async function POST(req: NextRequest) {
         success: false,
         error: error.message || 'Failed to redeem reward'
       }, { status: 400 });
-    } finally {
-      // End the session
-      dbSession.endSession();
     }
   } catch (error) {
+    // Ensure transaction is aborted on outer errors
+    if (dbSession.inTransaction()) {
+      await dbSession.abortTransaction();
+    }
+    
     console.error('Error redeeming reward:', error);
+    
+    if (error instanceof mongoose.Error.ValidationError) {
+      return NextResponse.json({ 
+        success: false,
+        error: 'Validation error', 
+        details: error.message 
+      }, { status: 400 });
+    }
+    
     return NextResponse.json({
       success: false,
       error: 'Server error while processing redemption'
     }, { status: 500 });
+  } finally {
+    // End the session
+    dbSession.endSession();
   }
 } 

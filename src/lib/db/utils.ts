@@ -182,4 +182,131 @@ export async function validateParticipantRupiah() {
   }
   
   return inconsistentParticipants;
+}
+
+/**
+ * Recalculate and update a single participant's rupiah balance
+ * @param participantId The participant's ObjectId
+ * @param session Optional mongoose session for transactions
+ * @returns Object with old and new balance
+ */
+export async function recalculateParticipantRupiah(
+  participantId: mongoose.Types.ObjectId | string,
+  session?: mongoose.ClientSession
+) {
+  // Convert to ObjectId if string
+  const participantObjectId = typeof participantId === 'string' 
+    ? new mongoose.Types.ObjectId(participantId)
+    : participantId;
+    
+  // Find the participant
+  const participant = await Participant.findById(participantObjectId);
+  if (!participant) {
+    throw new Error(`Participant with ID ${participantId} not found`);
+  }
+  
+  // Calculate earned rupiah
+  const earnedResults = await Answer.aggregate([
+    { 
+      $match: { 
+        participantId: participantObjectId 
+      } 
+    },
+    { 
+      $group: { 
+        _id: null, 
+        total: { $sum: '$rupiahAwarded' } 
+      } 
+    }
+  ]);
+  
+  // Calculate spent rupiah
+  const spentResults = await Redemption.aggregate([
+    { 
+      $match: { 
+        participantId: participantObjectId,
+        status: { $ne: 'cancelled' }
+      } 
+    },
+    { 
+      $group: { 
+        _id: null, 
+        total: { $sum: '$rupiahSpent' } 
+      } 
+    }
+  ]);
+  
+  const totalEarned = earnedResults[0]?.total || 0;
+  const totalSpent = spentResults[0]?.total || 0;
+  const calculatedBalance = totalEarned - totalSpent;
+  
+  // Update the participant's balance if different
+  if (participant.totalRupiah !== calculatedBalance) {
+    const oldBalance = participant.totalRupiah;
+    
+    if (session) {
+      await Participant.findByIdAndUpdate(
+        participantObjectId,
+        { totalRupiah: calculatedBalance },
+        { session }
+      );
+    } else {
+      participant.totalRupiah = calculatedBalance;
+      await participant.save();
+    }
+    
+    return {
+      participantId: participantObjectId,
+      oldBalance,
+      newBalance: calculatedBalance,
+      difference: oldBalance - calculatedBalance
+    };
+  }
+  
+  return {
+    participantId: participantObjectId,
+    oldBalance: participant.totalRupiah,
+    newBalance: participant.totalRupiah,
+    difference: 0
+  };
+}
+
+/**
+ * Check for answers with invalid questionId references
+ * @returns Array of invalid answers
+ */
+export async function findInvalidAnswers() {
+  const answers = await Answer.find().lean();
+  const invalidAnswers = [];
+  
+  for (const answer of answers) {
+    // Check if question exists
+    const questionExists = await Question.exists({ _id: answer.questionId });
+    
+    if (!questionExists) {
+      invalidAnswers.push({
+        answerId: answer._id,
+        invalidReference: {
+          field: 'questionId',
+          value: answer.questionId
+        }
+      });
+      continue;
+    }
+    
+    // Check if participant exists
+    const participantExists = await Participant.exists({ _id: answer.participantId });
+    
+    if (!participantExists) {
+      invalidAnswers.push({
+        answerId: answer._id,
+        invalidReference: {
+          field: 'participantId',
+          value: answer.participantId
+        }
+      });
+    }
+  }
+  
+  return invalidAnswers;
 } 

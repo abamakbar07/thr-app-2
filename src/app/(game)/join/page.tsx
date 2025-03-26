@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'react-hot-toast';
 
 export default function JoinGame() {
   const router = useRouter();
@@ -54,8 +55,26 @@ export default function JoinGame() {
     setIsLoading(true);
 
     try {
-      // Validate participant access code
-      const response = await fetch(`/api/participants/validate`, {
+      // Validate access code
+      const response = await fetch(`/api/access-codes/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          roomCode: roomCode,
+          accessCode: accessCode,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Invalid access code');
+      }
+
+      // Check if participant already exists with this access code
+      const participantResponse = await fetch(`/api/participants/validate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,20 +85,16 @@ export default function JoinGame() {
         }),
       });
 
-      const data = await response.json();
+      const participantData = await participantResponse.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Invalid access code');
-      }
-
-      if (data.participant?.name) {
+      if (participantResponse.ok && participantData.participant?.name) {
         // Existing participant, store data and proceed to game
-        setParticipantData(data.participant);
+        setParticipantData(participantData.participant);
         
         // Store participant info in localStorage
         localStorage.setItem('participant', JSON.stringify({
-          id: data.participant._id,
-          name: data.participant.name,
+          id: participantData.participant._id,
+          name: participantData.participant.name,
           roomId: roomData._id,
           roomName: roomData.name,
           accessCode: accessCode

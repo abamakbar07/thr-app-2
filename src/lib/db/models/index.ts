@@ -5,6 +5,7 @@ import Participant, { IParticipant } from './Participant';
 import Answer, { IAnswer } from './Answer';
 import Reward, { IReward } from './Reward';
 import Redemption, { IRedemption } from './Redemption';
+import AccessCode, { IAccessCode } from './AccessCode';
 
 export {
   User,
@@ -14,6 +15,7 @@ export {
   Answer,
   Reward,
   Redemption,
+  AccessCode,
 };
 
 export type {
@@ -24,4 +26,5 @@ export type {
   IAnswer,
   IReward,
   IRedemption,
+  IAccessCode,
 }; 

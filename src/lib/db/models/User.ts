@@ -5,6 +5,7 @@ export interface IUser {
   name: string;
   email: string;
   password?: string;
+  role: string;
   createdAt: Date;
   updatedAt: Date;
   providers?: {
@@ -26,6 +27,11 @@ const UserSchema = new Schema<IUser>(
     },
     password: { 
       type: String 
+    },
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user'
     },
     providers: [
       {

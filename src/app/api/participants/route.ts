@@ -12,16 +12,8 @@ interface User {
 
 export async function POST(req: NextRequest) {
   try {
-    const authSession = await getServerSession(authOptions);
-    if (!authSession?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const user = authSession.user as User;
-    
-    if (!user || !user._id) {
-      return NextResponse.json({ error: 'User authentication issue - Please sign out and sign in again' }, { status: 401 });
-    }
+    // Remove authentication check - allow public access for participants using access codes
+    // Player authentication is handled by the access code system instead of user accounts
     
     const { roomId, name, accessCode, accessCodeId } = await req.json();
 

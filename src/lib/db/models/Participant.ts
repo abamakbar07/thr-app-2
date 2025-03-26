@@ -8,6 +8,7 @@ export interface IParticipant {
   totalRupiah: number;
   accessCode: string;
   currentStatus: 'active' | 'inactive';
+  thrClaimStatus: 'unclaimed' | 'processing' | 'claimed';
 }
 
 const ParticipantSchema = new Schema<IParticipant>({
@@ -41,10 +42,17 @@ const ParticipantSchema = new Schema<IParticipant>({
     default: 'active',
     index: true,
   },
+  thrClaimStatus: {
+    type: String,
+    enum: ['unclaimed', 'processing', 'claimed'],
+    default: 'unclaimed',
+    index: true,
+  },
 }, { timestamps: true });
 
 // Compound index for leaderboard queries
 ParticipantSchema.index({ roomId: 1, totalRupiah: -1 });
 ParticipantSchema.index({ roomId: 1, currentStatus: 1 });
+ParticipantSchema.index({ roomId: 1, thrClaimStatus: 1 });
 
 export default mongoose.models.Participant || mongoose.model<IParticipant>('Participant', ParticipantSchema); 

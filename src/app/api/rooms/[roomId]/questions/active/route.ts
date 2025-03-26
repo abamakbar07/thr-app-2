@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db/connection';
-import { Room, Question, Participant } from '@/lib/db/models';
+import { Room, Question, Participant, Answer } from '@/lib/db/models';
+import mongoose from 'mongoose';
 
 export async function GET(
   request: NextRequest,
@@ -37,14 +38,60 @@ export async function GET(
       );
     }
     
-    // Fetch the active questions for this room
+    // Fetch the questions for this room
     const questions = await Question.find({ 
-      roomId,
-      isDisabled: { $ne: true }
+      roomId
     }).sort({ difficulty: 1, createdAt: -1 });
     
+    // Get all answers for this participant
+    const participantAnswers = await Answer.find({
+      participantId,
+      roomId
+    });
+    
+    // Get all correctly answered questions in this room by any participant
+    const correctlyAnsweredQuestions = await Answer.find({
+      roomId,
+      isCorrect: true
+    }).distinct('questionId');
+    
+    // Create a map of questionId to participant's answer result
+    const answeredMap = new Map();
+    participantAnswers.forEach(answer => {
+      answeredMap.set(answer.questionId.toString(), {
+        isCorrect: answer.isCorrect,
+        selectedOption: answer.selectedOptionIndex
+      });
+    });
+    
+    // Process the questions to add their status
+    const processedQuestions = questions.map(question => {
+      const questionId = question._id.toString();
+      const participantAnswer = answeredMap.get(questionId);
+      const isAnsweredByParticipant = !!participantAnswer;
+      const isAnsweredCorrectlyByAnyone = correctlyAnsweredQuestions.some(
+        id => id.toString() === questionId
+      );
+      
+      return {
+        ...question.toObject(),
+        // A question is disabled if:
+        // 1. It's marked as disabled in the database
+        // 2. It's been correctly answered by any participant
+        // 3. The current participant has already attempted it
+        isDisabled: 
+          question.isDisabled || 
+          isAnsweredCorrectlyByAnyone || 
+          isAnsweredByParticipant,
+        status: isAnsweredByParticipant 
+          ? (participantAnswer.isCorrect ? 'correct' : 'incorrect') 
+          : (isAnsweredCorrectlyByAnyone ? 'answered-by-others' : 'available'),
+        participantAnswer: isAnsweredByParticipant ? participantAnswer : null
+      };
+    });
+    
     return NextResponse.json({ 
-      questions,
+      questions: processedQuestions,
       message: 'Active questions retrieved successfully' 
     });
   } catch (error) {

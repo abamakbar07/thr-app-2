@@ -61,6 +61,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Question does not belong to the specified room' }, { status: 400 });
     }
     
+    // Check if the question is already disabled (answered correctly by someone else)
+    if (question.isDisabled) {
+      await session.abortTransaction();
+      return NextResponse.json({ error: 'This question has already been answered correctly by another participant' }, { status: 400 });
+    }
+    
     // Check if this question was already answered by this participant
     const existingAnswer = await Answer.findOne({
       questionId: questionObjectId,
@@ -69,7 +75,18 @@ export async function POST(req: NextRequest) {
     
     if (existingAnswer) {
       await session.abortTransaction();
-      return NextResponse.json({ error: 'Question already answered by this participant' }, { status: 400 });
+      return NextResponse.json({ error: 'You have already answered this question' }, { status: 400 });
+    }
+    
+    // Check if anyone has already answered this question correctly
+    const correctAnswer = await Answer.findOne({
+      questionId: questionObjectId,
+      isCorrect: true
+    }).session(session);
+    
+    if (correctAnswer) {
+      await session.abortTransaction();
+      return NextResponse.json({ error: 'This question has already been answered correctly by another participant' }, { status: 400 });
     }
     
     // Verify the selected option is valid
@@ -89,9 +106,16 @@ export async function POST(req: NextRequest) {
       rupiahAwarded = question.rupiah || 0;
       
       // Bonus for fast answers (up to 50% extra for answering in 3 seconds or less)
-      // const timeFactor = Math.max(0, 1 - (timeToAnswer / 15));
-      // const timeBonus = Math.floor(rupiahAwarded * 0.5 * timeFactor);
-      // rupiahAwarded += timeBonus;
+      const timeFactor = Math.max(0, 1 - (timeToAnswer / 15));
+      const timeBonus = Math.floor(rupiahAwarded * 0.5 * timeFactor);
+      rupiahAwarded += timeBonus;
+      
+      // Mark the question as disabled if answered correctly
+      await Question.findByIdAndUpdate(
+        questionObjectId,
+        { isDisabled: true },
+        { session }
+      );
       
       // Update participant's total rupiah
       await Participant.findByIdAndUpdate(

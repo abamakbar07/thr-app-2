@@ -22,10 +22,10 @@ export default async function AdminDashboard() {
   const participantsCount = await Participant.countDocuments();
   const rewardsCount = await Reward.countDocuments();
   
-  // Get recent rooms
-  const recentRooms = await Room.find().sort({ createdAt: -1 }).limit(5);
+  // Get recent rooms created by the current user
+  const recentRooms = await Room.find({ createdBy: currentUser?.id }).sort({ createdAt: -1 }).limit(5);
   
-  // Get claims stats
+    // Get claims stats
   const claimedCount = await Participant.countDocuments({ thrClaimStatus: 'claimed' });
   const processingCount = await Participant.countDocuments({ thrClaimStatus: 'processing' });
   const unclaimedCount = await Participant.countDocuments({ thrClaimStatus: 'unclaimed' });

@@ -2,9 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db/connection';
 import { Room, Participant, AccessCode } from '@/lib/db/models';
 import mongoose from 'mongoose';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+}
 
 export async function POST(req: NextRequest) {
   try {
+    const authSession = await getServerSession(authOptions);
+    if (!authSession?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const user = authSession.user as User;
+    
+    if (!user || !user._id) {
+      return NextResponse.json({ error: 'User authentication issue - Please sign out and sign in again' }, { status: 401 });
+    }
+    
     const { roomId, name, accessCode, accessCodeId } = await req.json();
 
     // Validate input

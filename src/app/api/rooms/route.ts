@@ -2,13 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import dbConnect from '@/lib/db/connection';
 import { Room } from '@/lib/db/models';
-import { getCurrentUser } from '@/lib/auth/session';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
 import mongoose from 'mongoose';
 
 interface User {
-  id: string;
   _id: string;
   name: string;
   email: string;
@@ -23,22 +21,8 @@ export async function POST(req: NextRequest) {
 
     const user = session.user as User;
     
-    // Log user info for debugging
-    // console.log('User attempting to create room:', user);
-    
-    if (!user) {
-      return new NextResponse(JSON.stringify({ error: 'Unauthorized - Please sign in again' }), {
-        status: 401,
-        headers: { 'content-type': 'application/json' },
-      });
-    }
-    
-    // Ensure we have a valid user ID
-    if (!user._id) {
-      return new NextResponse(JSON.stringify({ error: 'User authentication issue - Please sign out and sign in again' }), {
-        status: 400,
-        headers: { 'content-type': 'application/json' },
-      });
+    if (!user || !user._id) {
+      return NextResponse.json({ error: 'User authentication issue - Please sign out and sign in again' }, { status: 401 });
     }
     
     const { name, description, startTime, endTime, timePerQuestion, showLeaderboard, allowRetries, showCorrectAnswers } = await req.json();
@@ -64,10 +48,7 @@ export async function POST(req: NextRequest) {
       },
     });
     
-    return new NextResponse(JSON.stringify({ roomId: room._id, accessCode }), {
-      status: 201,
-      headers: { 'content-type': 'application/json' },
-    });
+    return NextResponse.json({ roomId: room._id, accessCode }, { status: 201 });
   } catch (error) {
     console.error('Error creating room:', error);
     
@@ -84,10 +65,7 @@ export async function POST(req: NextRequest) {
       }
     }
     
-    return new NextResponse(JSON.stringify({ error: errorMessage }), {
-      status: 500,
-      headers: { 'content-type': 'application/json' },
-    });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -100,29 +78,15 @@ export async function GET(req: NextRequest) {
 
     const user = session.user as User;
     
-    if (!user) {
-      return new NextResponse(JSON.stringify({ error: 'Unauthorized - Please sign in again' }), {
-        status: 401,
-        headers: { 'content-type': 'application/json' },
-      });
-    }
-    
-    // Ensure we have a valid user ID
-    if (!user._id) {
-      return new NextResponse(JSON.stringify({ error: 'User authentication issue - Please sign out and sign in again' }), {
-        status: 400,
-        headers: { 'content-type': 'application/json' },
-      });
+    if (!user || !user._id) {
+      return NextResponse.json({ error: 'User authentication issue - Please sign out and sign in again' }, { status: 401 });
     }
     
     await dbConnect();
     
     const rooms = await Room.find({ createdBy: new mongoose.Types.ObjectId(user._id) }).sort({ createdAt: -1 });
     
-    return new NextResponse(JSON.stringify(rooms), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    });
+    return NextResponse.json(rooms, { status: 200 });
   } catch (error) {
     console.error('Error fetching rooms:', error);
     
@@ -131,9 +95,6 @@ export async function GET(req: NextRequest) {
       errorMessage = error.message;
     }
     
-    return new NextResponse(JSON.stringify({ error: errorMessage }), {
-      status: 500,
-      headers: { 'content-type': 'application/json' },
-    });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 } 

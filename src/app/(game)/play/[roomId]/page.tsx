@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams, useParams } from 'next/navigation';
-import { QuestionSelection } from '@/components/game/QuestionSelection';
-import { TriviaCard } from '@/components/game/TriviaCard';
-import { IQuestion, IRoom } from '@/lib/db/models';
+import { TriviaCard } from '../../../../components/game/TriviaCard';
+import { IQuestion, IRoom } from '../../../../lib/db/models';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
+import React from 'react';
+import { QuestionSelection } from '../../../../components/game/QuestionSelection';
 
 interface AnswerResult {
   isCorrect: boolean;

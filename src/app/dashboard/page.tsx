@@ -1,9 +1,10 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import dbConnect from '@/lib/db/connection';
-import { Room, Question, Participant, Reward, Redemption } from '@/lib/db/models';
-import { getCurrentUser } from '@/lib/auth/session';
-import { formatCurrency } from '@/lib/utils';
+import dbConnect from '../../lib/db/connection';
+import { Room, Question, Participant, Reward, Redemption } from '../../lib/db/models';
+import { getCurrentUser } from '../../lib/auth/session';
+import { formatCurrency } from '../../lib/utils';
+import React from 'react';
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard - Islamic Trivia THR',

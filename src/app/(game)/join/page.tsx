@@ -73,6 +73,9 @@ export default function JoinGame() {
         throw new Error(data.error || 'Invalid access code');
       }
 
+      // Store the access code ID for later use when joining
+      const accessCodeId = data.accessCodeId;
+
       // Check if participant already exists with this access code
       const participantResponse = await fetch(`/api/participants/validate`, {
         method: 'POST',
@@ -106,7 +109,10 @@ export default function JoinGame() {
         // Redirect to the game room
         router.push(`/game/${roomData._id}`);
       } else {
-        // First-time participant, go to name input step
+        // First-time participant, store accessCodeId for registration
+        localStorage.setItem('accessCodeId', accessCodeId);
+        
+        // Go to name input step
         setStep(3);
         setIsLoading(false);
       }
@@ -127,6 +133,9 @@ export default function JoinGame() {
     setIsLoading(true);
 
     try {
+      // Retrieve stored accessCodeId if available
+      const accessCodeId = localStorage.getItem('accessCodeId');
+
       // Join the room as a participant
       const participantResponse = await fetch('/api/participants', {
         method: 'POST',
@@ -137,6 +146,7 @@ export default function JoinGame() {
           roomId: roomData._id,
           name: name,
           accessCode: accessCode,
+          accessCodeId: accessCodeId
         }),
       });
 
@@ -154,6 +164,9 @@ export default function JoinGame() {
         roomName: roomData.name,
         accessCode: accessCode
       }));
+
+      // Remove the temporary accessCodeId
+      localStorage.removeItem('accessCodeId');
 
       // Reset loading state before navigation
       setIsLoading(false);

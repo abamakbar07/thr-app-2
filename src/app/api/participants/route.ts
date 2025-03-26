@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db/connection';
-import { Room, Participant } from '@/lib/db/models';
+import { Room, Participant, AccessCode } from '@/lib/db/models';
+import mongoose from 'mongoose';
 
 export async function POST(req: NextRequest) {
   try {
-    const { roomId, name, accessCode } = await req.json();
+    const { roomId, name, accessCode, accessCodeId } = await req.json();
 
     // Validate input
     if (!roomId || !name || !accessCode) {
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if access code is already in use
+    // Check if access code is already in use by a participant
     const existingParticipant = await Participant.findOne({ accessCode });
     if (existingParticipant) {
       // If participant with this code exists and is linked to this room, update name
@@ -54,6 +55,32 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Verify the access code is valid and not used
+    const codeDoc = accessCodeId 
+      ? await AccessCode.findById(accessCodeId)
+      : await AccessCode.findOne({ code: accessCode, roomId });
+
+    if (!codeDoc) {
+      return NextResponse.json(
+        { message: 'Invalid access code' },
+        { status: 400 }
+      );
+    }
+
+    if (!codeDoc.isActive) {
+      return NextResponse.json(
+        { message: 'Access code is inactive' },
+        { status: 400 }
+      );
+    }
+
+    if (codeDoc.usedBy) {
+      return NextResponse.json(
+        { message: 'Access code has already been used' },
+        { status: 400 }
+      );
+    }
+
     // Create new participant
     const participant = await Participant.create({
       name,
@@ -62,6 +89,11 @@ export async function POST(req: NextRequest) {
       accessCode,
       joinedAt: new Date(),
     });
+
+    // Mark the access code as used
+    codeDoc.usedBy = participant._id;
+    codeDoc.usedAt = new Date();
+    await codeDoc.save();
 
     return NextResponse.json(
       {

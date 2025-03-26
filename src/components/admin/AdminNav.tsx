@@ -9,7 +9,6 @@ const navItems = [
   { name: 'Questions', href: '/dashboard/questions', icon: '❓' },
   { name: 'Participants', href: '/dashboard/participants', icon: '👥' },
   { name: 'Rewards', href: '/dashboard/rewards', icon: '🎁' },
-  { name: 'Access Codes', href: '/dashboard/access-codes', icon: '🔑' },
 ];
 
 export default function AdminNav() {

@@ -3,6 +3,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 export interface IAccessCode extends Document {
   code: string;
   isActive: boolean;
+  roomId: mongoose.Types.ObjectId;
   createdBy: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -21,6 +22,11 @@ const AccessCodeSchema = new Schema<IAccessCode>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    roomId: {
+      type: Schema.Types.ObjectId,
+      ref: "Room",
+      required: [true, "Room is required"],
     },
     createdBy: {
       type: Schema.Types.ObjectId,

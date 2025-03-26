@@ -5,174 +5,159 @@ import mongoose from 'mongoose';
 import { z } from 'zod';
 
 // Schema validation for participant joining
-const participantSchema = z.object({
-  roomId: z.string().min(1),
-  name: z.string().min(1).max(50),
-  accessCode: z.string().min(1),
-  accessCodeId: z.string().optional()
+const participantJoinSchema = z.object({
+  roomId: z.string().min(1, "Room ID is required"),
+  name: z.string().min(1, "Name is required"),
+  accessCode: z.string().min(1, "Access code is required"),
+  accessCodeId: z.string().optional(),
+  participantId: z.string().optional() // Added to support rejoining participants
 });
 
-export async function POST(req: NextRequest) {
-  // Start MongoDB session for transaction
+export async function POST(request: NextRequest) {
   const session = await mongoose.startSession();
+  session.startTransaction();
 
-  try {    
+  try {
     await dbConnect();
+    const body = await request.json();
     
-    // Parse and validate request body
-    const body = await req.json();
-    const validation = participantSchema.safeParse(body);
-    
+    // Validate request body
+    const validation = participantJoinSchema.safeParse(body);
     if (!validation.success) {
-      return NextResponse.json(
-        { error: 'Invalid request data', details: validation.error.format() },
-        { status: 400 }
-      );
+      return NextResponse.json({ 
+        message: 'Invalid request data', 
+        errors: validation.error.format() 
+      }, { status: 400 });
     }
-    
-    const { roomId, name, accessCode, accessCodeId } = validation.data;
-    
-    // Start transaction
-    session.startTransaction();
-    
-    // Convert string ID to ObjectId
-    const roomObjectId = new mongoose.Types.ObjectId(roomId);
 
-    // Verify room exists and is active
-    const room = await Room.findOne({ 
-      _id: roomObjectId, 
-      isActive: true 
+    const { roomId, name, accessCode, accessCodeId, participantId } = validation.data;
+
+    // Check if room exists and is active
+    const room = await Room.findOne({
+      _id: roomId,
+      isActive: true,
     }).session(session);
-    
+
     if (!room) {
       await session.abortTransaction();
-      return NextResponse.json(
-        { error: 'Room not found or inactive' },
-        { status: 404 }
-      );
+      session.endSession();
+      return NextResponse.json({ message: 'Room not found or inactive' }, { status: 404 });
     }
 
-    // Check if access code is already in use by a participant
-    const existingParticipant = await Participant.findOne({ 
-      accessCode 
-    }).session(session);
-    
-    if (existingParticipant) {
-      // If participant with this code exists and is linked to this room, update name
-      if (existingParticipant.roomId.toString() === roomId) {
+    // If we have a participantId, this is a rejoining participant
+    if (participantId) {
+      const existingParticipant = await Participant.findById(participantId).session(session);
+      
+      if (existingParticipant) {
+        // Update participant's name and status if needed
         existingParticipant.name = name;
         existingParticipant.currentStatus = 'active';
         await existingParticipant.save({ session });
-
-        await session.commitTransaction();
         
-        return NextResponse.json(
-          {
-            message: 'Successfully rejoined the room',
-            participant: {
-              _id: existingParticipant._id.toString(),
-              name: existingParticipant.name,
-              roomId: existingParticipant.roomId.toString(),
-              totalRupiah: existingParticipant.totalRupiah,
-            },
-          },
-          { status: 200 }
-        );
+        await session.commitTransaction();
+        session.endSession();
+        
+        return NextResponse.json({
+          message: 'Participant rejoined successfully',
+          participant: existingParticipant,
+          isRejoin: true
+        });
+      }
+      // If participant ID is provided but not found, continue with normal flow
+    }
+
+    // Check if the access code is already used by another participant
+    const existingParticipant = await Participant.findOne({
+      accessCode: accessCode,
+      currentStatus: 'active'
+    }).session(session);
+
+    if (existingParticipant) {
+      // If same participant is trying to rejoin the same room, update their name
+      if (existingParticipant.roomId.toString() === roomId) {
+        existingParticipant.name = name;
+        await existingParticipant.save({ session });
+        
+        await session.commitTransaction();
+        session.endSession();
+        
+        return NextResponse.json({
+          message: 'Participant updated successfully',
+          participant: existingParticipant
+        });
       } else {
+        // Access code is already used in a different room
         await session.abortTransaction();
-        return NextResponse.json(
-          { error: 'Access code is already in use for another room' },
-          { status: 400 }
-        );
+        session.endSession();
+        
+        return NextResponse.json({
+          message: 'Access code is already in use by another participant in a different room',
+        }, { status: 400 });
       }
     }
 
-    // Verify the access code is valid and not used
-    const accessCodeObjectId = accessCodeId 
-      ? new mongoose.Types.ObjectId(accessCodeId) 
-      : undefined;
-    
-    const codeDoc = accessCodeObjectId 
-      ? await AccessCode.findById(accessCodeObjectId).session(session)
-      : await AccessCode.findOne({ 
-          code: accessCode, 
-          roomId: roomObjectId,
-          isActive: true
-        }).session(session);
+    // Check if the access code is valid and not used yet (or belongs to an inactive participant)
+    const accessCodeDoc = await AccessCode.findOne({ 
+      code: accessCode,
+      roomId: roomId,
+      isActive: true
+    }).session(session);
 
-    if (!codeDoc) {
+    if (!accessCodeDoc) {
       await session.abortTransaction();
-      return NextResponse.json(
-        { error: 'Invalid access code' },
-        { status: 400 }
-      );
+      session.endSession();
+      
+      return NextResponse.json({ message: 'Invalid or inactive access code' }, { status: 400 });
     }
 
-    if (!codeDoc.isActive) {
-      await session.abortTransaction();
-      return NextResponse.json(
-        { error: 'Access code is inactive' },
-        { status: 400 }
-      );
+    // Check for inactive participant with this access code to reactivate
+    const inactiveParticipant = await Participant.findOne({
+      accessCode: accessCode,
+      currentStatus: 'inactive'
+    }).session(session);
+
+    let participant;
+
+    if (inactiveParticipant) {
+      // Reactivate the participant
+      inactiveParticipant.name = name;
+      inactiveParticipant.currentStatus = 'active';
+      participant = await inactiveParticipant.save({ session });
+    } else {
+      // Create a new participant
+      participant = await Participant.create([{
+        roomId: roomId,
+        name: name,
+        accessCode: accessCode,
+        joinedAt: new Date(),
+        totalRupiah: 0,
+        currentStatus: 'active'
+      }], { session });
+      
+      participant = participant[0];
+
+      // Mark access code as used if not already
+      if (!accessCodeDoc.usedBy) {
+        accessCodeDoc.usedBy = participant._id;
+        accessCodeDoc.usedAt = new Date();
+        await accessCodeDoc.save({ session });
+      }
     }
 
-    if (codeDoc.usedBy) {
-      await session.abortTransaction();
-      return NextResponse.json(
-        { error: 'Access code has already been used' },
-        { status: 400 }
-      );
-    }
-
-    // Create new participant
-    const participant = await Participant.create([{
-      name,
-      roomId: roomObjectId,
-      totalRupiah: 0,
-      accessCode,
-      joinedAt: new Date(),
-      currentStatus: 'active',
-    }], { session });
-
-    // Mark the access code as used
-    codeDoc.usedBy = participant[0]._id;
-    codeDoc.usedAt = new Date();
-    await codeDoc.save({ session });
-
-    // Commit the transaction
     await session.commitTransaction();
-
-    return NextResponse.json(
-      {
-        message: 'Successfully joined the room',
-        participant: {
-          _id: participant[0]._id.toString(),
-          name: participant[0].name,
-          roomId: participant[0].roomId.toString(),
-          totalRupiah: participant[0].totalRupiah,
-        },
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    // Abort transaction on error
-    await session.abortTransaction();
-    
-    console.error('Error joining room:', error);
-    
-    if (error instanceof mongoose.Error.ValidationError) {
-      return NextResponse.json({ 
-        error: 'Validation error', 
-        details: error.message 
-      }, { status: 400 });
-    }
-    
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  } finally {
-    // End session
     session.endSession();
+
+    return NextResponse.json({
+      message: 'Participant joined successfully',
+      participant: participant,
+      isRejoin: !!inactiveParticipant
+    });
+  } catch (error: any) {
+    await session.abortTransaction();
+    session.endSession();
+    
+    return NextResponse.json({ 
+      message: error.message || 'Failed to join as participant' 
+    }, { status: 500 });
   }
 } 

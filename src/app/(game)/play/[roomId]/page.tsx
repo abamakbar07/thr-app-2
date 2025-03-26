@@ -196,9 +196,40 @@ export default function GamePlay() {
     }
   };
   
-  const handleLogout = () => {
-    // Clear participant data from local storage
+  const handleLogout = async () => {
+    // Store access code for future reference
+    const storedParticipant = localStorage.getItem('participant');
+    if (storedParticipant && participantId) {
+      try {
+        // Call the logout API to mark the participant as inactive
+        const response = await fetch('/api/participants/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            participantId: participantId,
+          }),
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          // Store relevant information for rejoining
+          localStorage.setItem('lastAccessCode', result.accessCode);
+          localStorage.setItem('lastRoomId', roomId);
+          localStorage.setItem('lastParticipantName', JSON.parse(storedParticipant).name);
+          console.log('Successfully logged out, you can rejoin with the same access code later');
+        } else {
+          console.error('Error logging out:', await response.json());
+        }
+      } catch (e) {
+        console.error('Error in logout process:', e);
+      }
+    }
+    
+    // Clear current participant data
     localStorage.removeItem('participant');
+    
     // Redirect to join page
     router.push('/join');
   };

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/db/connection";
-import { AccessCode, Room } from "@/lib/db/models";
+import { AccessCode, Room, Participant } from "@/lib/db/models";
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,8 +35,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Access code is inactive" }, { status: 400 });
     }
 
+    // Check if this access code has been used before
     if (codeDoc.usedBy) {
-      return NextResponse.json({ error: "Access code has already been used" }, { status: 400 });
+      // Check if the participant exists and is just rejoining
+      const participant = await Participant.findOne({
+        accessCode: accessCode,
+        roomId: room._id
+      });
+
+      if (participant) {
+        // Access code is being reused by the same participant (rejoining)
+        return NextResponse.json({ 
+          message: "Access code verified successfully for returning participant", 
+          roomId: room._id,
+          accessCodeId: codeDoc._id,
+          participantId: participant._id,
+          isReturning: true
+        }, { status: 200 });
+      }
     }
     
     return NextResponse.json({ 

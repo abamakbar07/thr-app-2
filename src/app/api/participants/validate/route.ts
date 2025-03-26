@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
         participant: {
           _id: participant._id,
           name: participant.name,
-          totalRupiah: participant.totalRupiah
+          totalRupiah: participant.totalRupiah,
+          currentStatus: participant.currentStatus
         },
         isExisting: true
       });

@@ -28,7 +28,7 @@ export default async function RoomsPage() {
   await dbConnect();
   const session = await getSession();
   
-  console.log("Full session object:", JSON.stringify(session, null, 2));
+  // console.log("Full session object:", JSON.stringify(session, null, 2));
   
   // Make sure we have a valid session and user ID
   if (!session?.user?.id) {

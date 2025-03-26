@@ -37,6 +37,7 @@ const authOptions: NextAuthOptions = {
         
         return {
           id: user._id.toString(),
+          _id: user._id.toString(),
           name: user.name,
           email: user.email,
           role: user.role || 'user',
@@ -54,6 +55,7 @@ const authOptions: NextAuthOptions = {
         return {
           ...token,
           id: user.id,
+          _id: user._id,
           email: user.email,
           name: user.name,
           role: user.role || 'user',
@@ -65,6 +67,7 @@ const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user && token) {
         session.user.id = token.id;
+        session.user._id = token._id;
         session.user.name = token.name || '';
         session.user.email = token.email || '';
         session.user.role = token.role || 'user';

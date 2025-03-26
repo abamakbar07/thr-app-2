@@ -5,7 +5,7 @@ export interface IRoom {
   name: string;
   description: string;
   accessCode: string;
-  createdBy: string;
+  createdBy: mongoose.Types.ObjectId;
   isActive: boolean;
   startTime: Date;
   endTime: Date;
@@ -35,7 +35,7 @@ const RoomSchema = new Schema<IRoom>(
       unique: true,
     },
     createdBy: {
-      type: String,
+      type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },

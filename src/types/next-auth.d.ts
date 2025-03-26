@@ -9,6 +9,7 @@ declare module "next-auth" {
     user: {
       /** MongoDB ObjectId as string */
       id: string;
+      _id: string;
       name: string;
       email: string;
       role: string;
@@ -22,6 +23,7 @@ declare module "next-auth" {
   interface User extends DefaultUser {
     /** MongoDB ObjectId as string */
     id: string;
+    _id: string;
     name: string;
     email: string;
     role?: string;
@@ -33,6 +35,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     /** MongoDB ObjectId as string */
     id: string;
+    _id: string;
     name: string;
     email: string;
     role?: string;

@@ -3,11 +3,25 @@ import { v4 as uuidv4 } from 'uuid';
 import dbConnect from '@/lib/db/connection';
 import { Room } from '@/lib/db/models';
 import { getCurrentUser } from '@/lib/auth/session';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+import mongoose from 'mongoose';
+
+interface User {
+  id: string;
+  _id: string;
+  name: string;
+  email: string;
+}
 
 export async function POST(req: NextRequest) {
   try {
-    await dbConnect();
-    const user = await getCurrentUser();
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const user = session.user as User;
     
     // Log user info for debugging
     // console.log('User attempting to create room:', user);
@@ -20,7 +34,7 @@ export async function POST(req: NextRequest) {
     }
     
     // Ensure we have a valid user ID
-    if (!user.id) {
+    if (!user._id) {
       return new NextResponse(JSON.stringify({ error: 'User authentication issue - Please sign out and sign in again' }), {
         status: 400,
         headers: { 'content-type': 'application/json' },
@@ -32,11 +46,13 @@ export async function POST(req: NextRequest) {
     // Generate a unique 6-character access code
     const accessCode = uuidv4().substring(0, 6).toUpperCase();
     
+    await dbConnect();
+    
     const room = await Room.create({
       name,
       description,
       accessCode,
-      createdBy: user.id,
+      createdBy: new mongoose.Types.ObjectId(user._id),
       isActive: true,
       startTime,
       endTime,
@@ -77,8 +93,12 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    await dbConnect();
-    const user = await getCurrentUser();
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const user = session.user as User;
     
     if (!user) {
       return new NextResponse(JSON.stringify({ error: 'Unauthorized - Please sign in again' }), {
@@ -88,14 +108,16 @@ export async function GET(req: NextRequest) {
     }
     
     // Ensure we have a valid user ID
-    if (!user.id) {
+    if (!user._id) {
       return new NextResponse(JSON.stringify({ error: 'User authentication issue - Please sign out and sign in again' }), {
         status: 400,
         headers: { 'content-type': 'application/json' },
       });
     }
     
-    const rooms = await Room.find({ createdBy: user.id }).sort({ createdAt: -1 });
+    await dbConnect();
+    
+    const rooms = await Room.find({ createdBy: new mongoose.Types.ObjectId(user._id) }).sort({ createdAt: -1 });
     
     return new NextResponse(JSON.stringify(rooms), {
       status: 200,

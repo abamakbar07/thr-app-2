@@ -15,7 +15,6 @@ interface Participant {
 export default function GameRoom() {
   const params = useParams();
   const router = useRouter();
-  const [participant, setParticipant] = useState<Participant | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const roomId = params.roomId as string;
@@ -52,7 +51,6 @@ export default function GameRoom() {
         }
 
         // Set participant in state
-        setParticipant(parsedParticipant);
         setLoading(false);
         
         // Redirect to play page with participant ID

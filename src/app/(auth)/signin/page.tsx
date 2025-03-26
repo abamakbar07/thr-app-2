@@ -1,9 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, SignInResponse } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+
+interface SignInResult {
+  error?: string;
+  // Add other properties if needed based on your sign-in response
+}
 
 export default function SignIn() {
   const router = useRouter();
@@ -11,31 +16,30 @@ export default function SignIn() {
   const success = searchParams.get('success');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<SignInResult | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setIsLoading(true);
 
     try {
-      const result = await signIn('credentials', {
+      const signInResult = await signIn('credentials', {
         redirect: false,
         email,
         password,
       });
-
-      if (result?.error) {
-        setError('Invalid email or password');
+      setResult(signInResult as SignInResult);
+      if (signInResult?.error) {
+        console.error(signInResult.error); // Log the error for debugging
         setIsLoading(false);
         return;
       }
 
       router.push('/dashboard');
-      router.refresh();
+      setIsLoading(false);
     } catch (error) {
-      setError('Something went wrong. Please try again.');
+      console.error(error); // Log the error for debugging
       setIsLoading(false);
     }
   };
@@ -75,9 +79,9 @@ export default function SignIn() {
               </div>
             )}
 
-            {error && (
+            {result?.error && (
               <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
-                <p className="text-sm text-red-700">{error}</p>
+                <p className="text-sm text-red-700">{result.error}</p>
               </div>
             )}
             
@@ -133,4 +137,4 @@ export default function SignIn() {
       </div>
     </>
   );
-} 
+}

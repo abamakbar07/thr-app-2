@@ -7,7 +7,7 @@ import { authOptions } from '@/lib/auth/authOptions';
 import mongoose from 'mongoose';
 
 interface User {
-  _id: string;
+  id: string;
   name: string;
   email: string;
 }
@@ -15,13 +15,14 @@ interface User {
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
+    console.log('session', session);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const user = session.user as User;
     
-    if (!user || !user._id) {
+    if (!user || !user.id) {
       return NextResponse.json({ error: 'User authentication issue - Please sign out and sign in again' }, { status: 401 });
     }
     
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
       name,
       description,
       accessCode,
-      createdBy: new mongoose.Types.ObjectId(user._id),
+      createdBy: new mongoose.Types.ObjectId(user.id),
       isActive: true,
       startTime,
       endTime,
@@ -78,13 +79,13 @@ export async function GET(req: NextRequest) {
 
     const user = session.user as User;
     
-    if (!user || !user._id) {
+    if (!user || !user.id) {
       return NextResponse.json({ error: 'User authentication issue - Please sign out and sign in again' }, { status: 401 });
     }
     
     await dbConnect();
     
-    const rooms = await Room.find({ createdBy: new mongoose.Types.ObjectId(user._id) }).sort({ createdAt: -1 });
+    const rooms = await Room.find({ createdBy: new mongoose.Types.ObjectId(user.id) }).sort({ createdAt: -1 });
     
     return NextResponse.json(rooms, { status: 200 });
   } catch (error) {

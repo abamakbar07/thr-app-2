@@ -21,7 +21,6 @@ export async function POST(request: NextRequest, { params }: { params: { roomId:
   try {
     await dbConnect();
     const session = await getServerSession(authOptions);
-    console.log(session);
     
     if (!session || session.user.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

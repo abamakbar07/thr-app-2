@@ -11,29 +11,30 @@ export default function DirectAccess() {
   const [error, setError] = useState('');
   const [name, setName] = useState('');
   const [showNameInput, setShowNameInput] = useState(false);
+  const [roomData, setRoomData] = useState<any>(null);
   
   useEffect(() => {
-    const roomId = searchParams.get('room');
+    const roomCode = searchParams.get('room');
     const accessCode = searchParams.get('code');
     
-    if (!roomId || !accessCode) {
-      setError('Invalid access link. Missing room ID or access code.');
+    if (!roomCode || !accessCode) {
+      setError('Invalid access link. Missing room code or access code.');
       setIsLoading(false);
       return;
     }
     
     const verifyAndJoin = async () => {
       try {
-        // First, fetch the room to get the room code
-        const roomResponse = await fetch(`/api/rooms/${roomId}`);
+        // First, fetch the room by its accessCode
+        const roomResponse = await fetch(`/api/rooms/validate?code=${roomCode}`);
         if (!roomResponse.ok) {
           throw new Error('Room not found or inactive');
         }
         
         const roomData = await roomResponse.json();
-        const roomCode = roomData.room.accessCode;
+        setRoomData(roomData.room);
         
-        // Verify the access code
+        // Verify the participant's access code
         const verifyResponse = await fetch(`/api/access-codes/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -56,7 +57,7 @@ export default function DirectAccess() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              roomId: roomId,
+              roomId: roomData.room._id,
               name: verifyData.participantName || 'Returning Player',
               accessCode: accessCode,
               accessCodeId: verifyData.accessCodeId,
@@ -75,7 +76,7 @@ export default function DirectAccess() {
           const participantInfo = {
             id: participantData.participant._id,
             name: participantData.participant.name,
-            roomId: roomId,
+            roomId: roomData.room._id,
             roomName: roomData.room.name,
             accessCode: accessCode,
             rejoining: true
@@ -85,7 +86,7 @@ export default function DirectAccess() {
           
           // Show success message and redirect to game
           toast.success('Welcome back! Joining the game...');
-          router.push(`/play/${roomId}?pid=${participantInfo.id}`);
+          router.push(`/play/${roomData.room._id}?pid=${participantInfo.id}`);
         } else {
           // New participant, ask for name
           setShowNameInput(true);
@@ -107,31 +108,28 @@ export default function DirectAccess() {
       return;
     }
     
-    const roomId = searchParams.get('room');
+    const roomCode = searchParams.get('room');
     const accessCode = searchParams.get('code');
     
-    if (!roomId || !accessCode) {
-      setError('Invalid access link. Missing room ID or access code.');
+    if (!roomCode || !accessCode) {
+      setError('Invalid access link. Missing room code or access code.');
+      return;
+    }
+    
+    if (!roomData) {
+      setError('Room data not available. Please try again.');
       return;
     }
     
     setIsLoading(true);
     
     try {
-      // First, fetch the room to get the room data
-      const roomResponse = await fetch(`/api/rooms/${roomId}`);
-      if (!roomResponse.ok) {
-        throw new Error('Room not found or inactive');
-      }
-      
-      const roomData = await roomResponse.json();
-      
       // Verify the access code again
       const verifyResponse = await fetch(`/api/access-codes/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          roomCode: roomData.room.accessCode,
+          roomCode: roomCode,
           accessCode: accessCode,
         }),
       });
@@ -148,7 +146,7 @@ export default function DirectAccess() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          roomId: roomId,
+          roomId: roomData._id,
           name: name,
           accessCode: accessCode,
           accessCodeId: verifyData.accessCodeId,
@@ -166,8 +164,8 @@ export default function DirectAccess() {
       const participantInfo = {
         id: participantData.participant._id,
         name: participantData.participant.name,
-        roomId: roomId,
-        roomName: roomData.room.name,
+        roomId: roomData._id,
+        roomName: roomData.name,
         accessCode: accessCode,
       };
       
@@ -175,7 +173,7 @@ export default function DirectAccess() {
       
       // Show success message and redirect to game
       toast.success('Successfully joined the game!');
-      router.push(`/play/${roomId}?pid=${participantInfo.id}`);
+      router.push(`/play/${roomData._id}?pid=${participantInfo.id}`);
     } catch (error: any) {
       console.error('Error joining room:', error);
       setError(error.message || 'Failed to join the room');

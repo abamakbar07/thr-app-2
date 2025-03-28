@@ -22,11 +22,25 @@ export default function AccessCodeGenerator({ roomId }: AccessCodeGeneratorProps
   const [newAccessCode, setNewAccessCode] = useState('');
   const [showQRCode, setShowQRCode] = useState(false);
   const [baseUrl, setBaseUrl] = useState('');
+  const [roomAccessCode, setRoomAccessCode] = useState('');
 
   useEffect(() => {
     // Get the base URL for generating shareable links
     setBaseUrl(window.location.origin);
+    fetchRoomAccessCode();
   }, []);
+
+  const fetchRoomAccessCode = async () => {
+    try {
+      const response = await fetch(`/api/rooms/${roomId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setRoomAccessCode(data.room.accessCode);
+      }
+    } catch (error) {
+      console.error("Error fetching room access code:", error);
+    }
+  };
 
   const fetchAccessCodes = async () => {
     setIsLoading(true);
@@ -79,7 +93,7 @@ export default function AccessCodeGenerator({ roomId }: AccessCodeGeneratorProps
 
   // Function to generate direct access link
   const generateDirectLink = (accessCode: string) => {
-    return `${baseUrl}/direct-access?room=${roomId}&code=${accessCode}`;
+    return `${baseUrl}/direct-access?room=${roomAccessCode}&code=${accessCode}`;
   };
 
   // Function to toggle QR code display

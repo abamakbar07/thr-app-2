@@ -9,10 +9,7 @@ interface AccessCode {
   code: string;
   isActive: boolean;
   createdAt: string;
-  usedBy: {
-    name: string;
-    email: string;
-  } | null;
+  name: string | null;
   usedAt: string | null;
 }
 
@@ -275,7 +272,7 @@ export default function AccessCodeManager({ roomId }: AccessCodeManagerProps) {
                           {formatDate(code.createdAt)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {code.usedBy ? code.usedBy.name : '-'}
+                          {code.name ? code.name : '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {code.usedAt ? formatDate(code.usedAt) : '-'}

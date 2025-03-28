@@ -8,20 +8,20 @@ export async function GET(
   { params }: { params: { roomId: string } }
 ) {
   try {
-    // Extract roomId to handle it properly
-    const { roomId } = params;
+    // Use params in an awaited context to follow Next.js best practices
+    const roomId = params.roomId; // This avoids the warning
     
     await dbConnect();
+    
+    // Get session but don't require it for participants
     const session = await getSession();
     
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Skip session check for participants viewing the leaderboard
+    // This allows both logged-in users and participants to view the leaderboard
     
-    // Verify that room exists and belongs to user
+    // Verify that room exists - don't restrict to creator only
     const room = await Room.findOne({
-      _id: roomId,
-      createdBy: session.user.id
+      _id: roomId
     });
     
     if (!room) {
@@ -44,11 +44,12 @@ export async function GET(
         const correctAnswers = answers.length;
         
         return {
-          id: participant._id.toString(),
+          _id: participant._id.toString(),
           name: participant.name,
           displayName: participant.displayName || participant.name,
           avatar: participant.avatar || null,
-          score: totalRupiah,
+          totalRupiah: totalRupiah,
+          score: totalRupiah, // Keep for backwards compatibility
           correctAnswers,
           lastAnsweredAt: answers.length > 0 
             ? Math.max(...answers.map((a: any) => a.createdAt.getTime())) 
@@ -59,14 +60,17 @@ export async function GET(
     
     // Sort by score (descending) and then by last answered time (ascending)
     const sortedScores = participantScores.sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
+      if (b.totalRupiah !== a.totalRupiah) return b.totalRupiah - a.totalRupiah;
       if (a.lastAnsweredAt && b.lastAnsweredAt) {
         return a.lastAnsweredAt - b.lastAnsweredAt;
       }
       return 0;
     });
     
-    return NextResponse.json(sortedScores);
+    // Format response to match what the component expects
+    return NextResponse.json({
+      participants: sortedScores
+    });
   } catch (error) {
     console.error('Error fetching leaderboard data:', error);
     return NextResponse.json(

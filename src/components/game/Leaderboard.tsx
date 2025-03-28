@@ -30,6 +30,17 @@ export function Leaderboard({ roomId, currentParticipantId, refreshInterval = 10
       
       const data = await response.json();
       
+      // Debug: Log the response data to see what we're getting
+      console.log('Leaderboard API response:', data);
+      
+      // Check if data.participants exists
+      if (!data.participants || !Array.isArray(data.participants)) {
+        console.error('Invalid data format received:', data);
+        setError('Invalid data format received from server');
+        setIsLoading(false);
+        return;
+      }
+      
       // Sort by rupiah and add position
       const sortedParticipants = data.participants
         .sort((a: LeaderboardParticipant, b: LeaderboardParticipant) => b.totalRupiah - a.totalRupiah)
@@ -38,6 +49,7 @@ export function Leaderboard({ roomId, currentParticipantId, refreshInterval = 10
           position: index + 1
         }));
       
+      console.log('Processed participants:', sortedParticipants);
       setParticipants(sortedParticipants);
       setIsLoading(false);
     } catch (error) {
@@ -48,6 +60,7 @@ export function Leaderboard({ roomId, currentParticipantId, refreshInterval = 10
   };
   
   useEffect(() => {
+    console.log('Leaderboard mounting with roomId:', roomId);
     fetchLeaderboard();
     
     // Set up polling for leaderboard updates
@@ -58,6 +71,7 @@ export function Leaderboard({ roomId, currentParticipantId, refreshInterval = 10
   
   // Get current participant's position
   const currentParticipant = participants.find(p => p._id === currentParticipantId);
+  console.log('Current participant found:', currentParticipant, 'with ID:', currentParticipantId);
   
   if (isLoading) {
     return (
@@ -108,45 +122,45 @@ export function Leaderboard({ roomId, currentParticipantId, refreshInterval = 10
       
       {/* Top participants */}
       <div className="space-y-3">
-        {topParticipants.map((participant) => {
-          const position = participant.position || 0;
-          const medal = getMedalEmoji(position);
-          const isCurrentUser = participant._id === currentParticipantId;
-          const bgColor = isCurrentUser ? 'bg-blue-50' : 
-                           position <= 3 ? 'bg-yellow-50' : 'bg-gray-50';
-          const borderColor = isCurrentUser ? 'border-blue-200' : 
-                              position <= 3 ? 'border-yellow-200' : 'border-gray-200';
-          
-          return (
-            <div
-              key={participant._id}
-              className={`flex items-center p-4 rounded-lg border ${bgColor} ${borderColor} transition-all duration-200 hover:shadow-md`}
-            >
-              <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full mr-3 font-bold text-lg">
-                {medal ? (
-                  <span className="text-xl">{medal}</span>
-                ) : (
-                  <div className="bg-gray-200 w-full h-full rounded-full flex items-center justify-center text-gray-700">
-                    {position}
-                  </div>
-                )}
-              </div>
-              <div className="flex-grow min-w-0">
-                <p className="font-medium text-gray-800 truncate">
-                  {participant.name}
-                  {isCurrentUser && (
-                    <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full">You</span>
+        {topParticipants.length > 0 ? (
+          topParticipants.map((participant) => {
+            const position = participant.position || 0;
+            const medal = getMedalEmoji(position);
+            const isCurrentUser = participant._id === currentParticipantId;
+            const bgColor = isCurrentUser ? 'bg-blue-50' : 
+                             position <= 3 ? 'bg-yellow-50' : 'bg-gray-50';
+            const borderColor = isCurrentUser ? 'border-blue-200' : 
+                                position <= 3 ? 'border-yellow-200' : 'border-gray-200';
+            
+            return (
+              <div
+                key={participant._id}
+                className={`flex items-center p-4 rounded-lg border ${bgColor} ${borderColor} transition-all duration-200 hover:shadow-md`}
+              >
+                <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full mr-3 font-bold text-lg">
+                  {medal ? (
+                    <span className="text-xl">{medal}</span>
+                  ) : (
+                    <div className="bg-gray-200 w-full h-full rounded-full flex items-center justify-center text-gray-700">
+                      {position}
+                    </div>
                   )}
-                </p>
+                </div>
+                <div className="flex-grow min-w-0">
+                  <p className="font-medium text-gray-800 truncate">
+                    {participant.name}
+                    {isCurrentUser && (
+                      <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full">You</span>
+                    )}
+                  </p>
+                </div>
+                <div className="flex-shrink-0 font-bold text-green-600">
+                  {participant.totalRupiah} rupiah
+                </div>
               </div>
-              <div className="flex-shrink-0 font-bold text-green-600">
-                {participant.totalRupiah} rupiah
-              </div>
-            </div>
-          );
-        })}
-        
-        {participants.length === 0 && (
+            );
+          })
+        ) : (
           <div className="text-center py-8 bg-gray-50 rounded-lg">
             <p className="text-gray-500 mb-2">No participants yet</p>
             <p className="text-sm text-gray-400">Be the first one to answer questions!</p>

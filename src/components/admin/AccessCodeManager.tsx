@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import QRCode from 'react-qr-code';
 
 interface AccessCode {
   _id: string;
@@ -24,8 +25,12 @@ export default function AccessCodeManager({ roomId }: AccessCodeManagerProps) {
   const [codeCount, setCodeCount] = useState(5);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("all");
+  const [selectedCodeForQR, setSelectedCodeForQR] = useState<string | null>(null);
+  const [baseUrl, setBaseUrl] = useState('');
 
   useEffect(() => {
+    // Get the base URL for generating shareable links
+    setBaseUrl(window.location.origin);
     fetchAccessCodes();
   }, [roomId, filter]);
 
@@ -111,11 +116,21 @@ export default function AccessCodeManager({ roomId }: AccessCodeManagerProps) {
     return new Date(dateString).toLocaleString();
   };
 
+  // Function to generate direct access link
+  const generateDirectLink = (accessCode: string) => {
+    return `${baseUrl}/direct-access?room=${roomId}&code=${accessCode}`;
+  };
+
+  // Function to toggle QR code display
+  const toggleQRCode = (code: string) => {
+    setSelectedCodeForQR(selectedCodeForQR === code ? null : code);
+  };
+
   return (
     <div className="border-t border-gray-100 px-4 py-5 sm:px-6 bg-[#f0f2f5]">
       <h3 className="text-lg leading-6 font-medium text-gray-900">Access Codes Management</h3>
       <p className="mt-1 text-sm text-gray-500">
-        Generate access codes for participants to join this room. Participants will need both the room code and an access code.
+        Generate access codes for participants to join this room. Participants will need both the room code and an access code, or they can directly scan a QR code or click a link.
       </p>
       
       <div className="mt-4">
@@ -156,6 +171,36 @@ export default function AccessCodeManager({ roomId }: AccessCodeManagerProps) {
             </select>
           </div>
         </div>
+        
+        {selectedCodeForQR && (
+          <div className="mb-6 p-4 bg-white rounded-lg shadow flex flex-col items-center" id="qr-section">
+            <div className="text-lg font-semibold mb-2">QR Code for Access Code: {selectedCodeForQR}</div>
+            <div className="p-4 bg-white border rounded">
+              <QRCode
+                size={200}
+                value={generateDirectLink(selectedCodeForQR)}
+                viewBox={`0 0 256 256`}
+              />
+            </div>
+            <p className="text-sm text-gray-600 mt-2">
+              Scan this QR code or share the direct link to allow participants to join the game
+            </p>
+            <div className="mt-3 flex gap-3">
+              <button
+                onClick={() => copyToClipboard(generateDirectLink(selectedCodeForQR))}
+                className="px-3 py-1 text-sm bg-[#128C7E] text-white rounded hover:bg-[#075E54]"
+              >
+                Copy Direct Link
+              </button>
+              <button
+                onClick={() => setSelectedCodeForQR(null)}
+                className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
         
         {loading ? (
           <div className="text-center py-10">Loading...</div>
@@ -199,6 +244,7 @@ export default function AccessCodeManager({ roomId }: AccessCodeManagerProps) {
                             <button
                               onClick={() => copyToClipboard(code.code)}
                               className="ml-2 text-gray-400 hover:text-gray-600"
+                              title="Copy code"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
@@ -221,18 +267,42 @@ export default function AccessCodeManager({ roomId }: AccessCodeManagerProps) {
                           {code.usedAt ? formatDate(code.usedAt) : '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() => toggleCodeStatus(code._id, code.isActive)}
-                            className="text-indigo-600 hover:text-indigo-900 mr-4"
-                          >
-                            {code.isActive ? 'Deactivate' : 'Activate'}
-                          </button>
-                          <button
-                            onClick={() => deleteCode(code._id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
+                          <div className="flex justify-end space-x-2">
+                            {code.isActive && (
+                              <>
+                                <button
+                                  onClick={() => toggleQRCode(code.code)}
+                                  className="text-[#128C7E] hover:text-[#075E54]"
+                                  title="Show QR Code"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => copyToClipboard(generateDirectLink(code.code))}
+                                  className="text-[#128C7E] hover:text-[#075E54]"
+                                  title="Copy direct link"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                  </svg>
+                                </button>
+                              </>
+                            )}
+                            <button
+                              onClick={() => toggleCodeStatus(code._id, code.isActive)}
+                              className="text-indigo-600 hover:text-indigo-900"
+                            >
+                              {code.isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                            <button
+                              onClick={() => deleteCode(code._id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useInView } from 'react-intersection-observer';
 
 interface QuestionSuggestionProps {
   roomId: string;
@@ -29,28 +28,20 @@ export default function QuestionSuggestions({ roomId, onQuestionSelect }: Questi
   const [suggestions, setSuggestions] = useState<QuestionSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [skip, setSkip] = useState(0);
   const [category, setCategory] = useState('');
   const [difficulty, setDifficulty] = useState('');
-  
-  const { ref, inView } = useInView({
-    threshold: 0.1,
-  });
 
   const LIMIT = 5;
 
-  const fetchSuggestions = useCallback(async (refresh = false) => {
+  const fetchSuggestions = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const skipValue = refresh ? 0 : skip;
       const queryParams = new URLSearchParams({
         currentRoomId: roomId,
         limit: LIMIT.toString(),
-        skip: skipValue.toString(),
-        random: 'true' // Add random parameter to get randomized results
+        random: 'true' // Always get random results
       });
       
       if (category) queryParams.append('category', category);
@@ -63,29 +54,17 @@ export default function QuestionSuggestions({ roomId, onQuestionSelect }: Questi
         throw new Error(data.error || 'Failed to fetch suggestions');
       }
       
-      if (refresh) {
-        setSuggestions(data.questions);
-      } else {
-        setSuggestions(prev => [...prev, ...data.questions]);
-      }
-      
-      setHasMore(data.hasMore);
-      if (!refresh) {
-        setSkip(prev => prev + data.questions.length);
-      } else if (data.questions.length > 0) {
-        setSkip(data.questions.length);
-      }
+      setSuggestions(data.questions);
     } catch (err) {
       console.error('Error fetching question suggestions:', err);
       setError(err instanceof Error ? err.message : 'Failed to load suggestions');
     } finally {
       setIsLoading(false);
     }
-  }, [roomId, skip, category, difficulty]);
+  }, [roomId, category, difficulty]);
 
   const refreshSuggestions = () => {
-    setSkip(0);
-    fetchSuggestions(true);
+    fetchSuggestions();
   };
 
   const handleQuestionSelect = (question: QuestionSuggestion) => {
@@ -96,15 +75,8 @@ export default function QuestionSuggestions({ roomId, onQuestionSelect }: Questi
 
   // Load initial suggestions
   useEffect(() => {
-    fetchSuggestions(true);
-  }, []);
-
-  // Load more when scrolling to the end
-  useEffect(() => {
-    if (inView && hasMore && !isLoading) {
-      fetchSuggestions();
-    }
-  }, [inView, hasMore, isLoading, fetchSuggestions]);
+    fetchSuggestions();
+  }, [fetchSuggestions]);
 
   return (
     <div className="bg-white shadow-sm rounded-lg border border-gray-200">
@@ -166,7 +138,12 @@ export default function QuestionSuggestions({ roomId, onQuestionSelect }: Questi
       )}
       
       <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-        {suggestions.length > 0 ? (
+        {isLoading ? (
+          <div className="p-8 text-center">
+            <div className="inline-block animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+            <p className="mt-2 text-sm text-gray-500">Loading suggestions...</p>
+          </div>
+        ) : suggestions.length > 0 ? (
           suggestions.map((question) => (
             <div 
               key={question._id} 
@@ -202,25 +179,47 @@ export default function QuestionSuggestions({ roomId, onQuestionSelect }: Questi
                   {question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1)}
                 </span>
                 <span>
-                  Rp {question.rupiah.toLocaleString()}
+                  Rp {question.rupiah}
                 </span>
               </div>
             </div>
           ))
         ) : (
-          <div className="px-4 py-6 text-center text-gray-500">
-            {isLoading ? 'Loading suggestions...' : 'No question suggestions available'}
+          <div className="px-4 py-12 text-center text-gray-500">
+            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No questions available</h3>
+            <p className="mt-1 text-xs text-gray-500">
+              Try different filters or create questions in other rooms first
+            </p>
           </div>
         )}
-        
-        {hasMore && (
-          <div 
-            ref={ref} 
-            className="p-4 text-center text-sm text-gray-500"
-          >
-            {isLoading && 'Loading more...'}
-          </div>
-        )}
+      </div>
+      
+      <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 text-center">
+        <button
+          onClick={refreshSuggestions}
+          disabled={isLoading}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all disabled:opacity-50"
+        >
+          {isLoading ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Loading...
+            </>
+          ) : (
+            <>
+              <svg className="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Show New Suggestions
+            </>
+          )}
+        </button>
       </div>
     </div>
   );

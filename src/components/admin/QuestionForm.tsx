@@ -49,6 +49,11 @@ export default function QuestionForm({ roomId, questionData }: QuestionFormProps
         ...prev,
         [name]: target.checked
       }));
+    } else if (name === 'rupiah') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: Number(value)
+      }));
     } else {
       setFormData(prev => ({
         ...prev,
@@ -101,6 +106,8 @@ export default function QuestionForm({ roomId, questionData }: QuestionFormProps
       ...questionData,
       // Keep the roomId for the current room
       roomId,
+      // Ensure rupiah is a number
+      rupiah: Number(questionData.rupiah)
     });
     setShowSuggestions(false); // Hide suggestions after selection
   };
@@ -133,6 +140,7 @@ export default function QuestionForm({ roomId, questionData }: QuestionFormProps
         body: JSON.stringify({
           ...formData,
           roomId,
+          rupiah: Number(formData.rupiah)
         }),
       });
       

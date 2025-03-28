@@ -6,9 +6,10 @@ import Link from 'next/link';
 const navItems = [
   { name: 'Dashboard', href: '/dashboard', icon: '📊' },
   { name: 'Game Rooms', href: '/dashboard/rooms', icon: '🎮' },
-  // { name: 'Questions', href: '/dashboard/questions', icon: '❓' },
+  { name: 'Questions', href: '/dashboard/questions', icon: '❓' },
+  { name: 'Browse Questions', href: '/dashboard/questions/browse', icon: '🔍' },
   { name: 'Participants', href: '/dashboard/participants', icon: '👥' },
-  // { name: 'Rewards', href: '/dashboard/rewards', icon: '🎁' },
+  { name: 'Rewards', href: '/dashboard/rewards', icon: '🎁' },
 ];
 
 export default function AdminNav() {

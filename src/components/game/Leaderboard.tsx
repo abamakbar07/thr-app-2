@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { LeaderboardSkeleton } from '@/components/ui/Skeleton';
 
 interface LeaderboardParticipant {
   _id: string;
@@ -60,12 +61,7 @@ export function Leaderboard({ roomId, currentParticipantId, refreshInterval = 10
   
   if (isLoading) {
     return (
-      <div className="p-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-xl font-bold mb-4 text-center">Leaderboard</h2>
-        <div className="flex justify-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-emerald-500 border-t-transparent"></div>
-        </div>
-      </div>
+      <LeaderboardSkeleton />
     );
   }
   

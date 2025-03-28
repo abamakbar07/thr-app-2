@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { IQuestion } from '@/lib/db/models';
 import Image from 'next/image';
+import { QuestionCardSkeleton } from '@/components/ui/Skeleton';
 
 interface EnhancedQuestion extends IQuestion {
   status?: 'available' | 'answered-by-others' | 'correct' | 'incorrect';
@@ -17,27 +18,25 @@ interface QuestionSelectionProps {
   onSelectQuestion: (questionId: string) => void;
   participantName: string;
   onLogout: () => void;
+  isLoading?: boolean;
 }
 
 export function QuestionSelection({ 
   questions, 
   onSelectQuestion, 
   participantName,
-  onLogout
+  onLogout,
+  isLoading = false
 }: QuestionSelectionProps) {
-  const [categories, setCategories] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
-  useEffect(() => {
-    // Extract unique categories from questions
-    const uniqueCategories = Array.from(new Set(questions.map(q => q.category)));
-    setCategories(uniqueCategories);
-  }, [questions]);
+  // Get unique categories
+  const categories = Array.from(new Set(questions.map(q => q.category)));
   
   // Filter questions by selected category
-  const filteredQuestions = selectedCategory === 'all'
-    ? questions
-    : questions.filter(q => q.category === selectedCategory);
+  const filteredQuestions = selectedCategory 
+    ? questions.filter(q => q.category === selectedCategory)
+    : questions;
   
   // Group questions by difficulty
   const questionsByDifficulty = {
@@ -116,6 +115,19 @@ export function QuestionSelection({
       return 'Available to answer';
     }
   };
+  
+  if (isLoading) {
+    return (
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Available Questions</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <QuestionCardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">

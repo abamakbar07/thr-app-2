@@ -56,4 +56,14 @@ export function generateRandomString(length: number = 6): string {
   }
   
   return result;
+}
+
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+/**
+ * Merges class names with tailwind classes properly
+ */
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
 } 

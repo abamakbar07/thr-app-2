@@ -16,7 +16,8 @@ export default function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-white shadow-sm rounded-lg mr-6 p-4">
+    <aside className="w-64 bg-white shadow-md rounded-lg mr-6 p-5 border border-gray-200">
+      <h2 className="text-lg font-semibold text-gray-800 mb-4 px-2">Admin Menu</h2>
       <nav className="space-y-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href || 
@@ -27,19 +28,35 @@ export default function AdminNav() {
               key={item.name}
               href={item.href}
               className={`
-                group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-150
+                group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200
                 ${isActive 
-                  ? 'bg-[#128C7E] text-white' 
-                  : 'text-gray-700 hover:bg-[#f0f2f5] hover:text-[#128C7E]'}
+                  ? 'bg-green-600 text-white shadow-sm' 
+                  : 'text-gray-700 hover:bg-green-50 hover:text-green-700 hover:shadow-sm'}
               `}
               aria-current={isActive ? 'page' : undefined}
             >
-              <span className="mr-3 text-lg">{item.icon}</span>
-              {item.name}
+              <span className="mr-3 text-xl flex items-center justify-center w-7">{item.icon}</span>
+              <span>{item.name}</span>
             </Link>
           );
         })}
       </nav>
+      
+      <div className="mt-8 pt-6 border-t border-gray-200">
+        <div className="px-4 py-2">
+          <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">Help & Resources</h3>
+          <div className="mt-3 space-y-2">
+            <a href="#" className="flex items-center text-sm text-gray-600 hover:text-green-600 px-2 py-1 rounded">
+              <span className="mr-2">📖</span>
+              <span>Documentation</span>
+            </a>
+            <a href="#" className="flex items-center text-sm text-gray-600 hover:text-green-600 px-2 py-1 rounded">
+              <span className="mr-2">🛟</span>
+              <span>Support</span>
+            </a>
+          </div>
+        </div>
+      </div>
     </aside>
   );
 } 

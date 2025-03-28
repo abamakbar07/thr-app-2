@@ -20,7 +20,7 @@ export default function SignOutButton() {
     <button
       onClick={handleSignOut}
       disabled={isSigningOut}
-      className="text-white hover:bg-[#075E54] px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 flex items-center"
+      className="text-white bg-green-700 hover:bg-green-800 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center shadow-sm"
     >
       {isSigningOut ? (
         <>

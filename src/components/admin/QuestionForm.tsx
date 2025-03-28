@@ -223,183 +223,207 @@ export default function QuestionForm({ roomId, questionData }: QuestionFormProps
           </div>
         )}
         
-        {/* Question Text */}
-        <div className="bg-white p-6 rounded-xl shadow-sm transition-all hover:shadow-md">
-          <label htmlFor="text" className="block text-sm font-medium text-gray-700 mb-2">Question Text</label>
-          <textarea
-            id="text"
-            name="text"
-            value={formData.text}
-            onChange={handleChange}
-            rows={3}
-            required
-            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all"
-            placeholder="Type your question here..."
-          />
-        </div>
-        
-        {/* Options */}
-        <div className="bg-white p-6 rounded-xl shadow-sm transition-all hover:shadow-md">
-          <div className="flex justify-between items-center mb-4">
-            <label className="block text-sm font-medium text-gray-700">Answer Options</label>
-            <button
-              type="button"
-              onClick={addOption}
-              disabled={formData.options.length >= 6}
-              className="flex items-center text-xs font-medium text-indigo-600 bg-indigo-50 rounded-full px-3 py-1 hover:bg-indigo-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add Option
-            </button>
-          </div>
-          
-          <div className="space-y-3">
-            {formData.options.map((option, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <div className="flex-shrink-0">
-                  <input
-                    type="radio"
-                    id={`correctOption-${index}`}
-                    name="correctOptionIndex"
-                    value={index}
-                    checked={formData.correctOptionIndex === index}
-                    onChange={() => setFormData(prev => ({ ...prev, correctOptionIndex: index }))}
-                    className="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 cursor-pointer transition-all"
-                  />
-                </div>
-                <div className="flex-grow relative">
-                  <input
-                    type="text"
-                    value={option}
-                    onChange={(e) => handleOptionChange(index, e.target.value)}
-                    required
-                    placeholder={`Option ${index + 1}`}
-                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all pr-10"
-                  />
-                  {formData.options.length > 2 && (
-                    <button 
-                      type="button"
-                      onClick={() => removeOption(index)}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-gray-500 mt-3">Select the radio button next to the correct answer</p>
-        </div>
-        
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {/* Category */}
-          <div className="bg-white p-6 rounded-xl shadow-sm transition-all hover:shadow-md">
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-            <input
-              type="text"
-              id="category"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              required
-              placeholder="e.g., Quran, Hadith, Fiqh, History"
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all"
-            />
-          </div>
-          
-          {/* Difficulty */}
-          <div className="bg-white p-6 rounded-xl shadow-sm transition-all hover:shadow-md">
-            <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
-            <select
-              id="difficulty"
-              name="difficulty"
-              value={formData.difficulty}
-              onChange={handleChange}
-              required
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all"
-            >
-              <option value="bronze">Bronze (Easy)</option>
-              <option value="silver">Silver (Medium)</option>
-              <option value="gold">Gold (Hard)</option>
-            </select>
-          </div>
-        </div>
-        
-        {/* Rupiah */}
-        <div className="bg-white p-6 rounded-xl shadow-sm transition-all hover:shadow-md">
-          <label htmlFor="rupiah" className="block text-sm font-medium text-gray-700 mb-2">Rupiah Value</label>
-          <div className="mt-1 relative rounded-md shadow-sm">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 sm:text-sm">Rp</span>
-            </div>
-            <input
-              type="number"
-              id="rupiah"
-              name="rupiah"
-              min="100"
-              value={formData.rupiah}
-              onChange={handleChange}
-              required
-              className="w-full rounded-lg border-gray-300 pl-12 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all"
-            />
-          </div>
-          <p className="mt-2 text-xs text-gray-500">Amount of Rupiah awarded for answering correctly</p>
-        </div>
-        
-        {/* Explanation */}
-        <div className="bg-white p-6 rounded-xl shadow-sm transition-all hover:shadow-md">
-          <label htmlFor="explanation" className="block text-sm font-medium text-gray-700 mb-2">
-            Explanation <span className="text-gray-500">(shown after answering)</span>
-          </label>
-          <textarea
-            id="explanation"
-            name="explanation"
-            value={formData.explanation}
-            onChange={handleChange}
-            rows={3}
-            required
-            placeholder="Explain the correct answer..."
-            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all"
-          />
-        </div>
-        
-        {/* Image URL (Optional) */}
-        <div className="bg-white p-6 rounded-xl shadow-sm transition-all hover:shadow-md">
-          <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-2">
-            Image URL <span className="text-gray-500">(optional)</span>
-          </label>
-          <input
-            type="url"
-            id="imageUrl"
-            name="imageUrl"
-            value={formData.imageUrl}
-            onChange={handleChange}
-            placeholder="https://example.com/image.jpg"
-            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-all"
-          />
-        </div>
-        
-        {/* Is Disabled */}
-        <div className="bg-white p-6 rounded-xl shadow-sm transition-all hover:shadow-md">
-          <div className="flex items-start">
-            <div className="flex items-center h-5">
-              <input
-                id="isDisabled"
-                name="isDisabled"
-                type="checkbox"
-                checked={formData.isDisabled}
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {/* Question text */}
+            <div className="md:col-span-2">
+              <label htmlFor="text" className="block text-sm font-medium text-gray-700 mb-1">
+                Question Text <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                id="text"
+                name="text"
+                rows={3}
+                value={formData.text}
                 onChange={handleChange}
-                className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 transition-all"
+                required
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="Type your question here..."
               />
             </div>
-            <div className="ml-3 text-sm">
-              <label htmlFor="isDisabled" className="font-medium text-gray-700">Disable Question</label>
-              <p className="text-gray-500">Disabled questions won't appear in the game</p>
+            
+            {/* Image URL */}
+            <div className="md:col-span-2">
+              <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">
+                Image URL (Optional)
+              </label>
+              <input
+                type="url"
+                id="imageUrl"
+                name="imageUrl"
+                value={formData.imageUrl}
+                onChange={handleChange}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="https://example.com/image.jpg"
+              />
+              <p className="mt-1 text-xs text-gray-500">Provide a URL to an image that illustrates this question (if applicable)</p>
+            </div>
+            
+            {/* Options */}
+            <div className="md:col-span-2 space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">
+                  Answer Options <span className="text-red-500">*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={addOption}
+                  disabled={formData.options.length >= 6}
+                  className={`inline-flex items-center px-3 py-1 text-sm rounded-md ${
+                    formData.options.length >= 6
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-green-50 text-green-700 hover:bg-green-100'
+                  }`}
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                  Add Option
+                </button>
+              </div>
+              
+              <div className="space-y-3">
+                {formData.options.map((option, index) => (
+                  <div key={index} className="flex items-center">
+                    <div className="flex-grow">
+                      <div className="flex items-center">
+                        <span className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full mr-2 font-medium ${
+                          formData.correctOptionIndex === index ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {String.fromCharCode(65 + index)}
+                        </span>
+                        <input
+                          type="text"
+                          value={option}
+                          onChange={(e) => handleOptionChange(index, e.target.value)}
+                          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                          placeholder={`Option ${String.fromCharCode(65 + index)}`}
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center ml-2">
+                      <button
+                        type="button"
+                        onClick={() => removeOption(index)}
+                        disabled={formData.options.length <= 2}
+                        className={`p-1 rounded-full ${
+                          formData.options.length <= 2 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-500'
+                        }`}
+                      >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                      </button>
+                      
+                      <div className="ml-2">
+                        <input
+                          type="radio"
+                          name="correctOptionIndex"
+                          id={`correctOption${index}`}
+                          checked={formData.correctOptionIndex === index}
+                          onChange={() => setFormData({ ...formData, correctOptionIndex: index })}
+                          className="h-4 w-4 border-gray-300 text-green-600 focus:ring-green-500"
+                        />
+                        <label htmlFor={`correctOption${index}`} className="ml-1 text-xs text-gray-600">
+                          Correct
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Difficulty & Reward */}
+            <div>
+              <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 mb-1">
+                Difficulty Level <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="difficulty"
+                name="difficulty"
+                value={formData.difficulty}
+                onChange={handleChange}
+                required
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              >
+                <option value="bronze">Bronze (Easy)</option>
+                <option value="silver">Silver (Medium)</option>
+                <option value="gold">Gold (Hard)</option>
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="rupiah" className="block text-sm font-medium text-gray-700 mb-1">
+                Reward (Rupiah) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                id="rupiah"
+                name="rupiah"
+                min="100"
+                step="100"
+                value={formData.rupiah}
+                onChange={handleChange}
+                required
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+            
+            {/* Category & Status */}
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                Category <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="category"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                required
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="e.g., Qur'an, Hadith, Sirah, Fiqh"
+              />
+            </div>
+            
+            <div className="flex items-center h-full pt-6">
+              <label htmlFor="isDisabled" className="flex items-center cursor-pointer">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    id="isDisabled"
+                    name="isDisabled"
+                    checked={formData.isDisabled}
+                    onChange={(e) => setFormData({ ...formData, isDisabled: e.target.checked })}
+                    className="sr-only"
+                  />
+                  <div className={`block w-10 h-6 rounded-full transition ${formData.isDisabled ? 'bg-gray-400' : 'bg-green-400'}`}></div>
+                  <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform ${formData.isDisabled ? '' : 'translate-x-full'}`}></div>
+                </div>
+                <div className="ml-3 text-sm">
+                  <span className="font-medium text-gray-700">Disable question</span>
+                  <p className="text-gray-500 text-xs">Disabled questions are not shown to participants</p>
+                </div>
+              </label>
+            </div>
+            
+            {/* Explanation */}
+            <div className="md:col-span-2">
+              <label htmlFor="explanation" className="block text-sm font-medium text-gray-700 mb-1">
+                Explanation
+              </label>
+              <textarea
+                id="explanation"
+                name="explanation"
+                rows={3}
+                value={formData.explanation}
+                onChange={handleChange}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="Explain why the correct answer is right (shown after answering)"
+              />
             </div>
           </div>
         </div>
@@ -408,25 +432,25 @@ export default function QuestionForm({ roomId, questionData }: QuestionFormProps
           <button
             type="button"
             onClick={() => router.push(`/dashboard/rooms/${roomId}/questions`)}
-            className="px-5 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isLoading}
-            className="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all disabled:opacity-70"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 inline-flex items-center"
           >
             {isLoading ? (
-              <span className="flex items-center">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <>
+                <svg className="w-4 h-4 mr-2 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                {questionData ? 'Saving...' : 'Creating...'}
-              </span>
+                Saving...
+              </>
             ) : (
-              questionData ? 'Save Question' : 'Create Question'
+              'Save Question'
             )}
           </button>
         </div>

@@ -90,35 +90,75 @@ export default async function AdminDashboard() {
   
     // Get current user
     const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      redirect("/login");
+    }
   
-    // Get counts for dashboard stats
-    const roomsCount = await Room.countDocuments();
-    const questionsCount = await Question.countDocuments();
-    const participantsCount = await Participant.countDocuments();
-    const rewardsCount = await Reward.countDocuments();
+    // Get counts for dashboard stats filtered by current user
+    const roomsCount = await Room.countDocuments({ createdBy: currentUser.id });
+    const questionsCount = await Question.countDocuments({ createdBy: currentUser.id });
+    
+    // Get rooms created by current user
+    const userRooms = await Room.find({ createdBy: currentUser.id });
+    const userRoomIds = userRooms.map(room => room._id);
+    
+    // Get participants count from user's rooms
+    const participantsCount = await Participant.countDocuments({ roomId: { $in: userRoomIds } });
+    
+    // Get rewards created by current user
+    const rewardsCount = await Reward.countDocuments({ createdBy: currentUser.id });
   
     // Get recent rooms created by the current user
-    const recentRooms = await Room.find({ createdBy: currentUser?.id }).sort({ createdAt: -1 }).limit(5);
+    const recentRooms = await Room.find({ createdBy: currentUser.id }).sort({ createdAt: -1 }).limit(5);
   
-    // Get claims stats
-    const claimedCount = await Participant.countDocuments({ status: 'fulfilled' });
-    const processingCount = await Participant.countDocuments({ status: 'processing' });
-    const submittedCount = await Participant.countDocuments({ status: 'submitted' });
+    // Get claims stats for participants in user's rooms
+    const claimedCount = await Participant.countDocuments({ 
+      roomId: { $in: userRoomIds }, 
+      status: 'fulfilled' 
+    });
+    
+    const processingCount = await Participant.countDocuments({ 
+      roomId: { $in: userRoomIds }, 
+      status: 'processing' 
+    });
+    
+    const submittedCount = await Participant.countDocuments({ 
+      roomId: { $in: userRoomIds }, 
+      status: 'submitted' 
+    });
+    
     const unclaimedCount = participantsCount - (submittedCount + processingCount + claimedCount);
   
-    // Get total THR earned by all participants
+    // Get total THR earned by all participants in user's rooms
     const totalThrEarned = await Participant.aggregate([
+      { $match: { roomId: { $in: userRoomIds } } },
       { $group: { _id: null, total: { $sum: '$totalRupiah' } } }
     ]);
   
-    // Get total THR distributed through redemptions
+    // Get total THR distributed through redemptions for participants in user's rooms
     const totalThrDistributed = await Redemption.aggregate([
-      { $match: { status: 'fulfilled' } },
+      { 
+        $lookup: {
+          from: "participants",
+          localField: "participantId",
+          foreignField: "_id",
+          as: "participant"
+        }
+      },
+      { $unwind: "$participant" },
+      { 
+        $match: { 
+          status: 'fulfilled',
+          "participant.roomId": { $in: userRoomIds }
+        } 
+      },
       { $group: { _id: null, total: { $sum: '$rupiahSpent' } } }
     ]);
   
-    // Get THR distribution by room
+    // Get THR distribution by room (only user's rooms)
     const thrByRoom = await Room.aggregate([
+      { $match: { _id: { $in: userRoomIds } } },
       {
         $lookup: {
           from: "participants",
@@ -138,15 +178,25 @@ export default async function AdminDashboard() {
       { $limit: 5 }
     ]);
   
-    // Get THR distribution by day (last 7 days)
+    // Get THR distribution by day (last 7 days) for user's participants
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   
     const thrByDay = await Redemption.aggregate([
+      {
+        $lookup: {
+          from: "participants",
+          localField: "participantId",
+          foreignField: "_id",
+          as: "participant"
+        }
+      },
+      { $unwind: "$participant" },
       { 
         $match: { 
           createdAt: { $gte: sevenDaysAgo },
-          status: "fulfilled"
+          status: "fulfilled",
+          "participant.roomId": { $in: userRoomIds }
         } 
       },
       {
@@ -169,9 +219,23 @@ export default async function AdminDashboard() {
       { $sort: { date: 1 } }
     ]);
   
-    // Get system vs reward redemptions count and amount
+    // Get system vs reward redemptions count and amount for user's participants
     const redemptionTypeStats = await Redemption.aggregate([
-      { $match: { status: 'fulfilled' } },
+      {
+        $lookup: {
+          from: "participants",
+          localField: "participantId",
+          foreignField: "_id",
+          as: "participant"
+        }
+      },
+      { $unwind: "$participant" },
+      { 
+        $match: { 
+          status: 'fulfilled',
+          "participant.roomId": { $in: userRoomIds }
+        } 
+      },
       { 
         $group: {
           _id: { $cond: [{ $eq: ["$rewardId", null] }, "system", "reward"] },
@@ -270,7 +334,7 @@ export default async function AdminDashboard() {
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
           {/* Stats Cards */}
           <AdminDashboardCard
-            title="Total Rooms"
+            title="Your Rooms"
             value={roomsCount}
             icon={
               <UsersIcon className="h-6 w-6 text-[#075E54]" />
@@ -280,7 +344,7 @@ export default async function AdminDashboard() {
           />
           
           <AdminDashboardCard
-            title="Total Participants"
+            title="Your Participants"
             value={participantsCount}
             icon={
               <UserGroupIcon className="h-6 w-6 text-[#075E54]" />
@@ -290,7 +354,7 @@ export default async function AdminDashboard() {
           />
           
           <AdminDashboardCard
-            title="Total Questions"
+            title="Your Questions"
             value={questionsCount}
             icon={
               <PencilIcon className="h-6 w-6 text-[#075E54]" />
@@ -300,7 +364,7 @@ export default async function AdminDashboard() {
           />
           
           <AdminDashboardCard
-            title="Total Rewards"
+            title="Your Rewards"
             value={rewardsCount}
             icon={
               <CheckCircleIcon className="h-6 w-6 text-[#075E54]" />
@@ -313,7 +377,7 @@ export default async function AdminDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* THR Status */}
           <div className="bg-white shadow rounded-lg p-4">
-            <h2 className="text-lg font-medium mb-4">THR Distribution</h2>
+            <h2 className="text-lg font-medium mb-4">Your THR Distribution</h2>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="bg-gray-50 p-3 rounded-lg">
                 <p className="text-sm text-gray-500">Total THR Earned</p>
@@ -377,7 +441,7 @@ export default async function AdminDashboard() {
 
           {/* THR Claim Status */}
           <div className="bg-white shadow rounded-lg p-4">
-            <h2 className="text-lg font-medium mb-4">THR Claim Status</h2>
+            <h2 className="text-lg font-medium mb-4">Your THR Claim Status</h2>
             <div className="space-y-6">
               <div>
                 <div className="flex justify-between items-center mb-1">
@@ -466,7 +530,7 @@ export default async function AdminDashboard() {
             
             {/* Top rooms by THR */}
             <div className="mt-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Top Rooms by THR</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">Your Top Rooms by THR</h3>
               {roomData.length > 0 ? (
                 <div className="space-y-3">
                   {roomData.map((room, index) => (
@@ -491,7 +555,7 @@ export default async function AdminDashboard() {
                 href="/participants"
                 className="flex items-center text-[#128C7E] font-medium hover:underline"
               >
-                View all participants
+                View your participants
                 <ArrowRightIcon className="h-4 w-4 ml-1" />
               </Link>
             </div>
@@ -499,7 +563,7 @@ export default async function AdminDashboard() {
         </div>
         
         {/* Recent Game Rooms */}
-        <h2 className="text-xl font-semibold mb-4 text-gray-800">Recent Game Rooms</h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-800">Your Recent Game Rooms</h2>
         <div className="bg-white shadow-sm rounded-lg border border-gray-100">
           {recentRooms.length > 0 ? (
             <ul className="divide-y divide-gray-100">
@@ -544,7 +608,7 @@ export default async function AdminDashboard() {
               href="/dashboard/rooms"
               className="text-sm text-[#128C7E] hover:text-[#0e6b5e] font-medium"
             >
-              View All Rooms →
+              View All Your Rooms →
             </Link>
           </div>
         </div>

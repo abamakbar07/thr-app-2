@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/providers";
@@ -22,6 +22,14 @@ export const metadata: Metadata = {
     apple: '/thr-logo.svg',
   },
 };
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#10b981', // Emerald-500 color
+}
 
 export default function RootLayout({
   children,

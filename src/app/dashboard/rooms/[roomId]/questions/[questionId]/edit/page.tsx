@@ -19,7 +19,7 @@ interface EditQuestionPageProps {
 
 export default async function EditQuestionPage({ params }: EditQuestionPageProps) {
   // Extract params values
-  const { roomId, questionId } = params;
+  const { roomId, questionId } = await params;
   
   await dbConnect();
   const session = await getSession();

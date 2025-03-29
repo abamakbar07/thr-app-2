@@ -61,7 +61,7 @@ export async function POST(
 ) {
   try {
     // Extract roomId to handle it properly
-    const { roomId } = params;
+    const { roomId } = await params;
     
     await dbConnect();
     const session = await getSession();

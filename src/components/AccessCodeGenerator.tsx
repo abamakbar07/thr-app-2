@@ -195,9 +195,15 @@ export default function AccessCodeGenerator({ roomId }: AccessCodeGeneratorProps
         <div className="mt-6">
           <h4 className="text-base font-medium text-gray-900 mb-3">Existing Participant Codes</h4>
           
+          {isGenerating && (
+            <div className="relative h-64">
+              <LoadingOverlay message="Generating access codes..." isFullScreen={false} />
+            </div>
+          )}
+
           {isLoading ? (
             <div className="flex justify-center py-6">
-              <LoadingOverlay show={true} message="Generating access codes..." />
+              <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
             </div>
           ) : participants.length > 0 ? (
             <div className="overflow-x-auto">

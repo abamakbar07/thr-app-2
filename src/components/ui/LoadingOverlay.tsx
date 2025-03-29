@@ -1,26 +1,79 @@
-import React from 'react';
+'use client';
+
+import { motion } from 'framer-motion';
 
 interface LoadingOverlayProps {
-  show: boolean;
   message?: string;
+  isFullScreen?: boolean;
+  transparent?: boolean;
 }
 
-export function LoadingOverlay({ show, message = 'Loading...' }: LoadingOverlayProps) {
-  if (!show) return null;
-  
+export function LoadingOverlay({ 
+  message = 'Loading...', 
+  isFullScreen = false,
+  transparent = false
+}: LoadingOverlayProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm transition-opacity">
-      <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full text-center">
-        <div className="flex justify-center mb-4">
-          <svg className="animate-spin h-12 w-12 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
+    <div className={`
+      ${isFullScreen ? 'fixed inset-0 z-50' : 'absolute inset-0 z-10'} 
+      ${transparent ? 'bg-white/60' : 'bg-white/90'} 
+      backdrop-blur-sm flex flex-col items-center justify-center
+    `}>
+      <div className="flex flex-col items-center">
+        <div className="relative w-16 h-16 mb-3">
+          {/* Outer spinner */}
+          <motion.div 
+            className="absolute inset-0 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full"
+            animate={{ rotate: 360 }}
+            transition={{ 
+              duration: 1.2, 
+              repeat: Infinity, 
+              ease: "linear"
+            }}
+          />
+          
+          {/* Middle spinner */}
+          <motion.div 
+            className="absolute inset-2 border-4 border-t-transparent border-r-purple-500 border-b-transparent border-l-transparent rounded-full"
+            animate={{ rotate: -360 }}
+            transition={{ 
+              duration: 1.6, 
+              repeat: Infinity, 
+              ease: "linear" 
+            }}
+          />
+          
+          {/* Inner spinner */}
+          <motion.div 
+            className="absolute inset-4 border-4 border-t-transparent border-r-transparent border-b-green-500 border-l-transparent rounded-full"
+            animate={{ rotate: 360 }}
+            transition={{ 
+              duration: 1, 
+              repeat: Infinity, 
+              ease: "linear" 
+            }}
+          />
+          
+          {/* Center dot with pulse effect */}
+          <motion.div 
+            className="absolute inset-6 bg-blue-500 rounded-full"
+            animate={{ scale: [1, 1.5, 1] }}
+            transition={{ 
+              duration: 1.5, 
+              repeat: Infinity,
+              repeatType: "reverse" 
+            }}
+          />
         </div>
-        <h2 className="text-xl font-semibold text-center text-gray-800 mb-2">
+        
+        <motion.p 
+          className="text-gray-700 font-medium"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
           {message}
-        </h2>
-        <p className="text-gray-500">Please wait while we prepare your content.</p>
+        </motion.p>
       </div>
     </div>
   );

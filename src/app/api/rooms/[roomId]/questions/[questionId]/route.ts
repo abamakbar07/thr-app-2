@@ -67,7 +67,7 @@ export async function PUT(
 ) {
   try {
     // Extract parameters to handle them properly
-    const { roomId, questionId } = params;
+    const { roomId, questionId } = await params;
     
     await dbConnect();
     const session = await getSession();

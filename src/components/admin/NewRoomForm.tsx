@@ -66,7 +66,6 @@ export default function NewRoomForm() {
   
   return (
     <div className="relative">
-      <LoadingOverlay show={isLoading} message="Creating new room..." />
       <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-6">
         {error && (
           <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
@@ -206,15 +205,15 @@ export default function NewRoomForm() {
         </div>
         
         <div className="mt-6 flex justify-end">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
-          >
+          <button type="submit" className="btn-primary w-full" disabled={isLoading}>
             {isLoading ? 'Creating...' : 'Create Room'}
           </button>
         </div>
       </form>
+
+      {isLoading && (
+        <LoadingOverlay message="Creating new room..." isFullScreen={true} />
+      )}
     </div>
   );
 } 

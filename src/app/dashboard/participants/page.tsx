@@ -25,13 +25,16 @@ export default async function ParticipantsPage({
   await dbConnect();
   const session = await getSession();
   
-  // Parse search params
-  const page = parseInt(searchParams.page || '1');
+  // Parse search params - properly await the values according to Next.js 15
+  const { page: pageParam, roomId: roomIdParam, status: statusParam, search: searchParam } = await searchParams;
+  
+  const pageStr = String(pageParam || '1');
+  const page = parseInt(pageStr);
   const pageSize = 10;
   const skip = (page - 1) * pageSize;
-  const roomIdFilter = searchParams.roomId;
-  const statusFilter = searchParams.status;
-  const searchQuery = searchParams.search;
+  const roomIdFilter = String(roomIdParam || 'all');
+  const statusFilter = String(statusParam || 'all');
+  const searchQuery = String(searchParam || '');
   
   // Get rooms created by the user
   const userRooms = await Room.find({ createdBy: session?.user?.id }).select('_id name');
@@ -126,7 +129,7 @@ export default async function ParticipantsPage({
               <select
                 id="roomId"
                 name="roomId"
-                defaultValue={roomIdFilter || 'all'}
+                defaultValue={roomIdFilter}
                 className="shadow-sm focus:ring-[#128C7E] focus:border-[#128C7E] block w-full sm:text-sm border-gray-300 rounded-md"
               >
                 <option value="all">All Rooms</option>
@@ -145,7 +148,7 @@ export default async function ParticipantsPage({
               <select
                 id="status"
                 name="status"
-                defaultValue={statusFilter || 'all'}
+                defaultValue={statusFilter}
                 className="shadow-sm focus:ring-[#128C7E] focus:border-[#128C7E] block w-full sm:text-sm border-gray-300 rounded-md"
               >
                 <option value="all">All Statuses</option>
@@ -265,8 +268,10 @@ export default async function ParticipantsPage({
                     href={{
                       pathname: '/dashboard/participants',
                       query: {
-                        ...searchParams,
-                        page: page - 1
+                        page: page - 1,
+                        roomId: roomIdFilter !== 'all' ? roomIdFilter : undefined,
+                        status: statusFilter !== 'all' ? statusFilter : undefined,
+                        search: searchQuery || undefined
                       }
                     }}
                     className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
@@ -280,8 +285,10 @@ export default async function ParticipantsPage({
                     href={{
                       pathname: '/dashboard/participants',
                       query: {
-                        ...searchParams,
-                        page: page + 1
+                        page: page + 1,
+                        roomId: roomIdFilter !== 'all' ? roomIdFilter : undefined,
+                        status: statusFilter !== 'all' ? statusFilter : undefined,
+                        search: searchQuery || undefined
                       }
                     }}
                     className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#128C7E] hover:bg-[#0e6b5e]"

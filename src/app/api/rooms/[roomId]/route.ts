@@ -36,7 +36,7 @@ export async function GET(
 ) {
   try {
     // Extract roomId to handle it properly
-    const { roomId } = params;
+    const { roomId } = await params;
     
     // Validate roomId
     if (!mongoose.isValidObjectId(roomId)) {

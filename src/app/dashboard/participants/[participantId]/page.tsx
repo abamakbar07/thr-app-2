@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import dbConnect from '@/lib/db/connection';
 import { Participant, Room, Answer, Redemption } from '@/lib/db/models';
 import { formatCurrency, getRelativeTimeString } from '@/lib/utils';
+import { PrintButton } from './PrintButton';
+import { SocialShareButtons } from './SocialShareButtons';
 
 interface PageProps {
   params: {
@@ -35,23 +37,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ParticipantDetailPage({ params }: PageProps) {
   await dbConnect();
   
-  const participantId = params.participantId;
-  
   // Get participant details
-  const participant = await Participant.findById(participantId).populate('roomId');
+  const participant = await Participant.findById(params.participantId).populate('roomId');
   
   if (!participant) {
     return notFound();
   }
   
   // Get answer stats
-  const answers = await Answer.find({ participantId }).populate('questionId');
+  const answers = await Answer.find({ participantId: params.participantId }).populate('questionId');
   const totalAnswers = answers.length;
   const correctAnswers = answers.filter(answer => answer.isCorrect).length;
   const accuracy = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
   
   // Get redemptions
-  const redemptions = await Redemption.find({ participantId })
+  const redemptions = await Redemption.find({ participantId: params.participantId })
     .populate('rewardId')
     .sort({ claimedAt: -1 });
   
@@ -74,17 +74,12 @@ export default async function ParticipantDetailPage({ params }: PageProps) {
         <h1 className="text-2xl font-bold">Participant Details</h1>
         <div className="flex gap-2">
           <Link 
-            href={`/dashboard/participants/${participantId}/edit`} 
+            href={`/dashboard/participants/${params.participantId}/edit`} 
             className="px-3 py-2 text-sm font-medium text-white bg-[#128C7E] rounded-md hover:bg-[#0e6b5e]"
           >
             Edit Participant
           </Link>
-          <button
-            onClick={() => window.print()}
-            className="px-3 py-2 text-sm font-medium text-[#128C7E] bg-white border border-[#128C7E] rounded-md hover:bg-gray-50"
-          >
-            Print Certificate
-          </button>
+          <PrintButton />
         </div>
       </div>
       
@@ -332,38 +327,10 @@ export default async function ParticipantDetailPage({ params }: PageProps) {
       <div className="fixed bottom-8 right-8 print:hidden">
         <div className="bg-white rounded-full shadow-lg p-4">
           <p className="text-sm font-medium text-gray-700 mb-2">Share Certificate:</p>
-          <div className="flex space-x-2">
-            <button 
-              className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700"
-              onClick={() => {
-                // Facebook share
-                window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank');
-              }}
-            >
-              <span className="sr-only">Facebook</span>
-              f
-            </button>
-            <button 
-              className="w-10 h-10 bg-[#25D366] text-white rounded-full flex items-center justify-center hover:bg-green-600"
-              onClick={() => {
-                // WhatsApp share
-                window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(`${participant.name} has earned ${formatCurrency(participant.totalRupiah)} in the Islamic Trivia game! ${window.location.href}`)}`, '_blank');
-              }}
-            >
-              <span className="sr-only">WhatsApp</span>
-              w
-            </button>
-            <button 
-              className="w-10 h-10 bg-blue-400 text-white rounded-full flex items-center justify-center hover:bg-blue-500"
-              onClick={() => {
-                // Twitter share
-                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`I earned ${formatCurrency(participant.totalRupiah)} in the Islamic Trivia THR Challenge!`)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
-              }}
-            >
-              <span className="sr-only">Twitter</span>
-              t
-            </button>
-          </div>
+          <SocialShareButtons 
+            participantName={participant.name} 
+            totalRupiah={participant.totalRupiah} 
+          />
         </div>
       </div>
     </div>

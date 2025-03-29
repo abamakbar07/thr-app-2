@@ -15,7 +15,9 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   await dbConnect();
-  const participant = await Participant.findById(params.participantId).populate('roomId');
+  // Get the participantId from params properly
+  const { participantId } = await params;
+  const participant = await Participant.findById(participantId).populate('roomId');
   
   if (!participant) {
     return {
@@ -37,21 +39,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ParticipantDetailPage({ params }: PageProps) {
   await dbConnect();
   
+  // Get the participantId from params properly
+  const { participantId } = await params;
+  
   // Get participant details
-  const participant = await Participant.findById(params.participantId).populate('roomId');
+  const participant = await Participant.findById(participantId).populate('roomId');
   
   if (!participant) {
     return notFound();
   }
   
   // Get answer stats
-  const answers = await Answer.find({ participantId: params.participantId }).populate('questionId');
+  const answers = await Answer.find({ participantId }).populate('questionId');
   const totalAnswers = answers.length;
   const correctAnswers = answers.filter(answer => answer.isCorrect).length;
   const accuracy = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
   
   // Get redemptions
-  const redemptions = await Redemption.find({ participantId: params.participantId })
+  const redemptions = await Redemption.find({ participantId })
     .populate('rewardId')
     .sort({ claimedAt: -1 });
   
@@ -74,7 +79,7 @@ export default async function ParticipantDetailPage({ params }: PageProps) {
         <h1 className="text-2xl font-bold">Participant Details</h1>
         <div className="flex gap-2">
           <Link 
-            href={`/dashboard/participants/${params.participantId}/edit`} 
+            href={`/dashboard/participants/${participantId}/edit`} 
             className="px-3 py-2 text-sm font-medium text-white bg-[#128C7E] rounded-md hover:bg-[#0e6b5e]"
           >
             Edit Participant
@@ -330,6 +335,7 @@ export default async function ParticipantDetailPage({ params }: PageProps) {
           <SocialShareButtons 
             participantName={participant.name} 
             totalRupiah={participant.totalRupiah} 
+            participantId={participantId}
           />
         </div>
       </div>

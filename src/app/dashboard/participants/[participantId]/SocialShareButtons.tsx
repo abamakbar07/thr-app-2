@@ -5,17 +5,21 @@ import { formatCurrency } from '@/lib/utils';
 interface SocialShareButtonsProps {
   participantName: string;
   totalRupiah: number;
+  participantId: string;
 }
 
-export function SocialShareButtons({ participantName, totalRupiah }: SocialShareButtonsProps) {
+export function SocialShareButtons({ participantName, totalRupiah, participantId }: SocialShareButtonsProps) {
+  // Generate the public certificate URL
+  const publicURL = `${window.location.origin}/certificate/${participantId}`;
+
   const handleFacebookShare = () => {
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank');
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(publicURL)}`, '_blank');
   };
 
   const handleWhatsAppShare = () => {
     window.open(
       `https://api.whatsapp.com/send?text=${encodeURIComponent(
-        `${participantName} has earned ${formatCurrency(totalRupiah)} in the Islamic Trivia game! ${window.location.href}`
+        `${participantName} has earned ${formatCurrency(totalRupiah)} in the Islamic Trivia game! ${publicURL}`
       )}`,
       '_blank'
     );
@@ -25,7 +29,7 @@ export function SocialShareButtons({ participantName, totalRupiah }: SocialShare
     window.open(
       `https://twitter.com/intent/tweet?text=${encodeURIComponent(
         `I earned ${formatCurrency(totalRupiah)} in the Islamic Trivia THR Challenge!`
-      )}&url=${encodeURIComponent(window.location.href)}`,
+      )}&url=${encodeURIComponent(publicURL)}`,
       '_blank'
     );
   };

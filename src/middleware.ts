@@ -34,9 +34,12 @@ export const config = {
   matcher: [
     // Protected routes that require authentication
     '/dashboard',
+    '/dashboard/:path*',
     '/rooms/:path*',
     '/questions/:path*',
     '/participants/:path*',
     '/rewards/:path*',
+    // Exclude public certificate routes
+    '/((?!certificate|api|_next/static|_next/image|favicon.ico).*)',
   ],
 }; 

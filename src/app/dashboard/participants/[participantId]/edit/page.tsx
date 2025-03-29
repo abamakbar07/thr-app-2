@@ -14,7 +14,8 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   await dbConnect();
-  const participant = await Participant.findById(params.participantId);
+  const { participantId } = await params;
+  const participant = await Participant.findById(participantId);
   
   if (!participant) {
     return {
@@ -69,7 +70,7 @@ export default async function EditParticipantPage({ params }: PageProps) {
     return redirect('/api/auth/signin');
   }
   
-  const participantId = params.participantId;
+  const { participantId } = await params;
   
   // Get participant details
   const participant = await Participant.findById(participantId).populate('roomId', 'name');

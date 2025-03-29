@@ -316,8 +316,9 @@ export default async function AdminDashboard() {
               <p className="text-gray-600">{currentUser?.email || 'No email provided'}</p>
               <div className="mt-2 flex space-x-3">
                 <Link 
-                  href="/dashboard/profile" 
-                  className="text-sm px-3 py-1 bg-gray-100 rounded-md text-gray-700 hover:bg-gray-200"
+                  href="/dashboard"
+                  className="text-sm px-3 py-1 bg-gray-100 rounded-md text-gray-700 cursor-not-allowed opacity-50"
+                  // onClick={(e) => e.preventDefault()} // Prevent click action
                 >
                   Edit Profile
                 </Link>
@@ -340,7 +341,7 @@ export default async function AdminDashboard() {
             icon={
               <UsersIcon className="h-6 w-6 text-[#075E54]" />
             }
-            href="/gamerooms"
+            href="/dashboard/rooms"
             linkText="Manage Rooms"
           />
           
@@ -350,7 +351,7 @@ export default async function AdminDashboard() {
             icon={
               <UserGroupIcon className="h-6 w-6 text-[#075E54]" />
             }
-            href="/participants"
+            href="/dashboard/participants"
             linkText="Manage Participants"
           />
         </div>

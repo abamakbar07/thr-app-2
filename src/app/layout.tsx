@@ -17,6 +17,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Islamic Trivia - Eid THR App",
   description: "Islamic trivia game for Eid al-Fitr with THR rewards",
+  icons: {
+    icon: '/thr-logo.svg',
+    apple: '/thr-logo.svg',
+  },
 };
 
 export default function RootLayout({

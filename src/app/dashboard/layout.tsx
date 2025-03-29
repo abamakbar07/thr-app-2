@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth/session';
 import AdminNav from '@/components/admin/AdminNav';
 import SignOutButton from '@/components/admin/SignOutButton';
+import AdminTutorial from '@/components/ui/AdminTutorial';
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard - Islamic Trivia THR App',
@@ -30,7 +31,7 @@ export default async function DashboardLayout({
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link href="/dashboard" className="flex-shrink-0 flex items-center">
-                <span className="mr-2 text-2xl">🧠</span>
+                <img src="/thr-logo.svg" alt="Islamic Trivia Logo" className="h-8 w-8 mr-2" />
                 <span className="text-xl font-semibold tracking-tight">Islamic Trivia Admin</span>
               </Link>
             </div>
@@ -69,6 +70,9 @@ export default async function DashboardLayout({
           </p>
         </div>
       </footer>
+
+      {/* Admin Tutorial Component */}
+      <AdminTutorial />
     </div>
   );
 } 

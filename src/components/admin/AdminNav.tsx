@@ -4,12 +4,14 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const navItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { name: 'Game Rooms', href: '/dashboard/rooms', icon: '🎮' },
-  { name: 'Questions', href: '/dashboard/questions', icon: '❓' },
-  { name: 'Browse Questions', href: '/dashboard/questions/browse', icon: '🔍' },
-  { name: 'Participants', href: '/dashboard/participants', icon: '👥' },
-  { name: 'Rewards', href: '/dashboard/rewards', icon: '🎁' },
+  { name: 'Dashboard', href: '/dashboard', icon: '📊', dataAttr: 'dashboard' },
+  { name: 'Game Rooms', href: '/dashboard/rooms', icon: '🎮', dataAttr: 'rooms' },
+  // { name: 'Questions', href: '/dashboard/questions', icon: '❓', dataAttr: 'questions' },
+  // { name: 'Browse Questions', href: '/dashboard/questions/browse', icon: '🔍', dataAttr: 'browse-questions' },
+  { name: 'Participants', href: '/dashboard/participants', icon: '👥', dataAttr: 'participants' },
+  // { name: 'Access Codes', href: '/dashboard/access-codes', icon: '🔑', dataAttr: 'access-codes' },
+  // { name: 'Rewards', href: '/dashboard/rewards', icon: '🎁', dataAttr: 'rewards' },
+  // { name: 'Sessions', href: '/dashboard/sessions', icon: '⏱️', dataAttr: 'sessions' },
 ];
 
 export default function AdminNav() {
@@ -27,6 +29,7 @@ export default function AdminNav() {
             <Link
               key={item.name}
               href={item.href}
+              data-tutorial={item.dataAttr}
               className={`
                 group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200
                 ${isActive 
@@ -46,14 +49,23 @@ export default function AdminNav() {
         <div className="px-4 py-2">
           <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">Help & Resources</h3>
           <div className="mt-3 space-y-2">
-            <a href="#" className="flex items-center text-sm text-gray-600 hover:text-green-600 px-2 py-1 rounded">
+            {/* <a href="#" className="flex items-center text-sm text-gray-600 hover:text-green-600 px-2 py-1 rounded">
               <span className="mr-2">📖</span>
               <span>Documentation</span>
+            </a> */}
+            <a href="#" className="flex items-center text-sm text-gray-600 hover:text-green-600 px-2 py-1 rounded" onClick={(e) => {
+              e.preventDefault();
+              // Trigger tutorial
+              localStorage.removeItem('hasSeenAdminTutorial');
+              window.location.href = '/dashboard';
+            }}>
+              <span className="mr-2">🧭</span>
+              <span>Show Tutorial</span>
             </a>
-            <a href="#" className="flex items-center text-sm text-gray-600 hover:text-green-600 px-2 py-1 rounded">
+            {/* <a href="#" className="flex items-center text-sm text-gray-600 hover:text-green-600 px-2 py-1 rounded">
               <span className="mr-2">🛟</span>
               <span>Support</span>
-            </a>
+            </a> */}
           </div>
         </div>
       </div>

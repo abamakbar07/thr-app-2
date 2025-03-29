@@ -115,20 +115,18 @@ export default async function AdminDashboard() {
     // Get claims stats for participants in user's rooms
     const claimedCount = await Participant.countDocuments({ 
       roomId: { $in: userRoomIds }, 
-      status: 'fulfilled' 
+      thrClaimStatus: 'claimed' 
     });
     
     const processingCount = await Participant.countDocuments({ 
       roomId: { $in: userRoomIds }, 
-      status: 'processing' 
+      thrClaimStatus: 'processing' 
     });
     
-    const submittedCount = await Participant.countDocuments({ 
+    const unclaimedCount = await Participant.countDocuments({ 
       roomId: { $in: userRoomIds }, 
-      status: 'submitted' 
+      thrClaimStatus: 'unclaimed' 
     });
-    
-    const unclaimedCount = participantsCount - (submittedCount + processingCount + claimedCount);
   
     // Get total THR earned by all participants in user's rooms
     const totalThrEarned = await Participant.aggregate([
@@ -150,7 +148,8 @@ export default async function AdminDashboard() {
       { 
         $match: { 
           status: 'fulfilled',
-          "participant.roomId": { $in: userRoomIds }
+          "participant.roomId": { $in: userRoomIds },
+          "participant.thrClaimStatus": 'claimed'
         } 
       },
       { $group: { _id: null, total: { $sum: '$rupiahSpent' } } }
@@ -196,7 +195,8 @@ export default async function AdminDashboard() {
         $match: { 
           createdAt: { $gte: sevenDaysAgo },
           status: "fulfilled",
-          "participant.roomId": { $in: userRoomIds }
+          "participant.roomId": { $in: userRoomIds },
+          "participant.thrClaimStatus": 'claimed'
         } 
       },
       {
@@ -233,7 +233,8 @@ export default async function AdminDashboard() {
       { 
         $match: { 
           status: 'fulfilled',
-          "participant.roomId": { $in: userRoomIds }
+          "participant.roomId": { $in: userRoomIds },
+          "participant.thrClaimStatus": 'claimed'
         } 
       },
       { 
@@ -331,7 +332,7 @@ export default async function AdminDashboard() {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-2 mb-8">
           {/* Stats Cards */}
           <AdminDashboardCard
             title="Your Rooms"
@@ -351,26 +352,6 @@ export default async function AdminDashboard() {
             }
             href="/participants"
             linkText="Manage Participants"
-          />
-          
-          <AdminDashboardCard
-            title="Your Questions"
-            value={questionsCount}
-            icon={
-              <PencilIcon className="h-6 w-6 text-[#075E54]" />
-            }
-            href="/questions"
-            linkText="Manage Questions"
-          />
-          
-          <AdminDashboardCard
-            title="Your Rewards"
-            value={rewardsCount}
-            icon={
-              <CheckCircleIcon className="h-6 w-6 text-[#075E54]" />
-            }
-            href="/rewards"
-            linkText="Manage Rewards"
           />
         </div>
         
@@ -445,18 +426,18 @@ export default async function AdminDashboard() {
             <div className="space-y-6">
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm font-medium">Submitted</span>
+                  <span className="text-sm font-medium">Unclaimed</span>
                   <span className="text-sm font-medium text-gray-500">
-                    {submittedCount} Participants
+                    {unclaimedCount} Participants
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
-                    className="bg-yellow-500 h-2 rounded-full"
+                    className="bg-gray-400 h-2 rounded-full"
                     style={{
                       width: `${
                         participantsCount > 0
-                          ? (submittedCount / participantsCount) * 100
+                          ? (unclaimedCount / participantsCount) * 100
                           : 0
                       }%`,
                     }}
@@ -487,7 +468,7 @@ export default async function AdminDashboard() {
 
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm font-medium">Fulfilled</span>
+                  <span className="text-sm font-medium">Claimed</span>
                   <span className="text-sm font-medium text-gray-500">
                     {claimedCount} Participants
                   </span>
@@ -499,27 +480,6 @@ export default async function AdminDashboard() {
                       width: `${
                         participantsCount > 0
                           ? (claimedCount / participantsCount) * 100
-                          : 0
-                      }%`,
-                    }}
-                  ></div>
-                </div>
-              </div>
-              
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm font-medium">Unclaimed</span>
-                  <span className="text-sm font-medium text-gray-500">
-                    {unclaimedCount} Participants
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-gray-400 h-2 rounded-full"
-                    style={{
-                      width: `${
-                        participantsCount > 0
-                          ? (unclaimedCount / participantsCount) * 100
                           : 0
                       }%`,
                     }}

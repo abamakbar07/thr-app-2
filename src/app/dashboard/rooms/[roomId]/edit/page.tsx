@@ -17,8 +17,8 @@ interface EditRoomPageProps {
 }
 
 export default async function EditRoomPage({ params }: EditRoomPageProps) {
-  // Extract roomId to handle it properly
-  const { roomId } = params;
+  // Extract roomId and properly await params
+  const { roomId } = await params;
   
   await dbConnect();
   const session = await getSession();

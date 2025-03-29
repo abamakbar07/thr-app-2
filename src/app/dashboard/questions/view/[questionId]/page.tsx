@@ -17,7 +17,7 @@ interface QuestionViewPageProps {
 }
 
 export default async function QuestionViewPage({ params }: QuestionViewPageProps) {
-  const { questionId } = params;
+  const { questionId } = await params;
   
   await dbConnect();
   const session = await getSession();

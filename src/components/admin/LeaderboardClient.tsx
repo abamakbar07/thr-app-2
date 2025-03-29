@@ -39,7 +39,30 @@ export default function LeaderboardClient({
         
         if (response.ok) {
           const data = await response.json();
-          setParticipants(data);
+          
+          // Process and sort the data
+          if (data && data.participants && Array.isArray(data.participants)) {
+            const processedData = data.participants.map((p: any) => ({
+              id: p._id || p.id,
+              name: p.name || 'Unknown',
+              displayName: p.displayName || p.name || 'Unknown',
+              avatar: p.avatar || null,
+              score: p.totalRupiah || p.score || 0,
+              correctAnswers: p.correctAnswers || 0,
+              lastAnsweredAt: p.lastAnsweredAt || null
+            }));
+            
+            // Sort by score (descending) and then by last answered time
+            const sortedData = processedData.sort((a: ParticipantScore, b: ParticipantScore) => {
+              if (b.score !== a.score) return b.score - a.score;
+              if (a.lastAnsweredAt && b.lastAnsweredAt) {
+                return a.lastAnsweredAt - b.lastAnsweredAt;
+              }
+              return 0;
+            });
+            
+            setParticipants(sortedData);
+          }
           setLastUpdated(new Date());
         }
       } catch (error) {
@@ -48,6 +71,9 @@ export default function LeaderboardClient({
         setLoading(false);
       }
     };
+    
+    // Initial fetch
+    fetchLeaderboardData();
     
     // Set up polling interval
     const intervalId = setInterval(fetchLeaderboardData, updateIntervalMs);

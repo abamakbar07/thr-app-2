@@ -5,6 +5,7 @@ import dbConnect from '@/lib/db/connection';
 import { Room, Question, Participant } from '@/lib/db/models';
 import { getSession } from '@/lib/auth/session';
 import AccessCodeManager from '@/components/admin/AccessCodeManager';
+import { revalidatePath } from 'next/cache';
 
 export const metadata: Metadata = {
   title: 'Room Details - Islamic Trivia THR',
@@ -50,7 +51,7 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
   
   // Calculate room status
   const now = new Date();
-  let status = "Upcoming";
+  let status = room.isActive;
   let statusColor: string = "bg-blue-100 text-blue-800";
   
   if (now > new Date(room.endTime)) {
@@ -91,7 +92,7 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
             </svg>
             Edit Room
           </Link>
-          {(status === "Active" || status === "Upcoming") && (
+          {(room.isActive) && (
             <Link
               href={`/dashboard/sessions/${roomId}`}
               className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-[#f0f2f5] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#128C7E] transition-colors duration-150"
@@ -102,6 +103,25 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
               Monitor Session
             </Link>
           )}
+          <form action={async () => {
+            'use server';
+            // Toggle room status
+            await Room.findByIdAndUpdate(roomId, { 
+              isActive: !room.isActive 
+            });
+            // Revalidate the page to show the updated status
+            revalidatePath(`/dashboard/rooms/${roomId}`);
+          }}>
+            <button
+              type="submit"
+              className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white ${room.isActive ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#128C7E] transition-colors duration-150`}
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={room.isActive ? "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" : "M5 13l4 4L19 7"} />
+              </svg>
+              {room.isActive ? 'Deactivate Room' : 'Activate Room'}
+            </button>
+          </form>
         </div>
       </div>
       

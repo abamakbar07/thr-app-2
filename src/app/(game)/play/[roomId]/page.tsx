@@ -27,6 +27,10 @@ interface EnhancedQuestion extends IQuestion {
   } | null;
 }
 
+interface EnhancedRoom extends IRoom {
+  showLeaderboard?: boolean;
+}
+
 export default function GamePlay() {
   const router = useRouter();
   const params = useParams();
@@ -36,12 +40,13 @@ export default function GamePlay() {
   
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [room, setRoom] = useState<IRoom | null>(null);
+  const [room, setRoom] = useState<EnhancedRoom | null>(null);
   const [questions, setQuestions] = useState<EnhancedQuestion[]>([]);
   const [selectedQuestion, setSelectedQuestion] = useState<EnhancedQuestion | null>(null);
   const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
   const [rupiah, setRupiah] = useState(0);
   const [participantName, setParticipantName] = useState('');
+  const [gameCompleted, setGameCompleted] = useState(false);
   
   // Fetch room and questions
   useEffect(() => {
@@ -86,6 +91,12 @@ export default function GamePlay() {
         }
         const questionsData = await questionsResponse.json();
         setQuestions(questionsData.questions);
+        
+        // Check if all questions are answered/disabled
+        const allQuestionsAnswered = questionsData.questions.every(
+          (q: EnhancedQuestion) => q.isDisabled || q.status === 'answered-by-others'
+        );
+        setGameCompleted(allQuestionsAnswered);
         
         // Fetch participant points
         const participantResponse = await fetch(`/api/participants/${pid}`);
@@ -184,6 +195,15 @@ export default function GamePlay() {
           )
         );
         
+        // Check if all questions are now answered
+        const updatedQuestions = questions.map(q => 
+          q._id === selectedQuestion._id 
+            ? { ...q, isDisabled: true } 
+            : q
+        );
+        const allAnswered = updatedQuestions.every(q => q.isDisabled || q.status === 'answered-by-others');
+        setGameCompleted(allAnswered);
+        
         // After 5 seconds, go back to question selection
         setTimeout(() => {
           setSelectedQuestion(null);
@@ -265,22 +285,86 @@ export default function GamePlay() {
   
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-50 p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-100 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Oops! Something went wrong</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+        </div>
+        <div className="text-center">
           <button
             onClick={() => router.push('/join')}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors text-lg font-medium"
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#128C7E] hover:bg-[#075E54] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#128C7E]"
           >
-            Go Back to Join Page
+            Return to Join Page
           </button>
         </div>
+      </div>
+    );
+  }
+  
+  // Game completed state - all questions answered
+  if (gameCompleted && !selectedQuestion) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">{room?.name || 'Islamic Trivia'}</h1>
+            <p className="text-sm text-gray-500">Welcome, {participantName}</p>
+          </div>
+          <div>
+            <div className="text-sm font-medium text-gray-700">Your THR (Tunjangan Hari Raya):</div>
+            <div className="text-2xl font-bold text-[#128C7E]">{formatCurrency(rupiah)}</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-8 mb-6 text-center">
+          <div className="w-20 h-20 mx-auto mb-4 bg-[#25D366] rounded-full flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Game Completed!</h2>
+          <p className="text-gray-600 mb-8">You've answered all available questions in this game room.</p>
+          <p className="text-xl font-semibold mb-2">Total THR Earned: {formatCurrency(rupiah)}</p>
+          
+          <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+            <a
+              href={`/certificate/${participantId}`}
+              target="_blank"
+              rel="noopener noreferrer" 
+              className="inline-flex justify-center items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-[#128C7E] hover:bg-[#075E54] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#128C7E]"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+              </svg>
+              View Certificate
+            </a>
+            <button
+              onClick={handleLogout}
+              className="inline-flex justify-center items-center px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#128C7E]"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Exit Game
+            </button>
+          </div>
+        </div>
+        
+        {room?.showLeaderboard && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Leaderboard</h2>
+            <Leaderboard roomId={roomId} currentParticipantId={participantId as string} />
+          </div>
+        )}
       </div>
     );
   }

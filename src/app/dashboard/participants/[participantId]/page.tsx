@@ -6,6 +6,9 @@ import { Participant, Room, Answer, Redemption } from '@/lib/db/models';
 import { formatCurrency, getRelativeTimeString } from '@/lib/utils';
 import { PrintButton } from './PrintButton';
 import { SocialShareButtons } from './SocialShareButtons';
+import { Suspense } from 'react';
+import ParticipantStatusUpdater from '@/components/admin/ParticipantStatusUpdater';
+import { Toaster } from 'react-hot-toast';
 
 interface PageProps {
   params: {
@@ -75,6 +78,7 @@ export default async function ParticipantDetailPage({ params }: PageProps) {
   
   return (
     <div>
+      <Toaster position="top-right" />
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Participant Details</h1>
         <div className="flex gap-2">
@@ -224,13 +228,20 @@ export default async function ParticipantDetailPage({ params }: PageProps) {
             <div className="flex justify-between">
               <dt className="text-sm font-medium text-gray-500">Claim Status</dt>
               <dd className="text-sm text-gray-900">
-                <span className={`px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full ${
-                  participant.thrClaimStatus === 'claimed' ? 'bg-green-100 text-green-800' : 
-                  participant.thrClaimStatus === 'processing' ? 'bg-yellow-100 text-yellow-800' : 
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {participant.thrClaimStatus.charAt(0).toUpperCase() + participant.thrClaimStatus.slice(1)}
-                </span>
+                <Suspense fallback={
+                  <span className={`px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full ${
+                    participant.thrClaimStatus === 'claimed' ? 'bg-green-100 text-green-800' : 
+                    participant.thrClaimStatus === 'processing' ? 'bg-yellow-100 text-yellow-800' : 
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {participant.thrClaimStatus.charAt(0).toUpperCase() + participant.thrClaimStatus.slice(1)}
+                  </span>
+                }>
+                  <ParticipantStatusUpdater 
+                    participantId={participant._id.toString()} 
+                    initialStatus={participant.thrClaimStatus as 'unclaimed' | 'processing' | 'claimed'} 
+                  />
+                </Suspense>
               </dd>
             </div>
           </dl>
@@ -267,10 +278,20 @@ export default async function ParticipantDetailPage({ params }: PageProps) {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      {redemption.rewardId?.name || 'Unknown Reward'}
+                      {redemption.rewardId?.name || 'System THR Claim'}
+                      {redemption.systemCreated && (
+                        <span className="ml-2 px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                          System
+                        </span>
+                      )}
                     </p>
                     <p className="text-sm text-gray-500">
                       {new Date(redemption.claimedAt).toLocaleDateString()} - {redemption.status}
+                      {redemption.notes && (
+                        <span className="ml-1 text-xs text-gray-400">
+                          {redemption.notes}
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="text-sm font-medium text-gray-900">

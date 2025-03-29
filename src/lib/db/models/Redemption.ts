@@ -2,30 +2,37 @@ import mongoose, { Schema } from 'mongoose';
 
 export interface IRedemption {
   _id?: string;
-  rewardId: mongoose.Types.ObjectId;
   participantId: mongoose.Types.ObjectId;
   roomId: mongoose.Types.ObjectId;
+  rewardId?: mongoose.Types.ObjectId | null;
   rupiahSpent: number;
   claimedAt: Date;
   status: 'pending' | 'fulfilled' | 'cancelled';
   notes?: string;
+  updatedAt?: Date;
+  updatedBy?: mongoose.Types.ObjectId;
+  systemCreated?: boolean;
+  createdBy?: mongoose.Types.ObjectId;
 }
 
 const RedemptionSchema = new Schema<IRedemption>({
-  rewardId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Reward',
-    required: true,
-  },
   participantId: {
     type: Schema.Types.ObjectId,
     ref: 'Participant',
     required: true,
+    index: true,
   },
   roomId: {
     type: Schema.Types.ObjectId,
     ref: 'Room',
     required: true,
+    index: true,
+  },
+  rewardId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Reward',
+    required: false,
+    default: null,
     index: true,
   },
   rupiahSpent: {
@@ -41,16 +48,31 @@ const RedemptionSchema = new Schema<IRedemption>({
     type: String,
     enum: ['pending', 'fulfilled', 'cancelled'],
     default: 'pending',
-    index: true,
   },
   notes: {
     type: String,
   },
+  updatedAt: {
+    type: Date,
+  },
+  updatedBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  systemCreated: {
+    type: Boolean,
+    default: false,
+    index: true,
+  },
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+  }
 }, { timestamps: true });
 
-// Compound indexes for common queries
+// Compound indexes for queries
+RedemptionSchema.index({ participantId: 1, claimedAt: -1 });
 RedemptionSchema.index({ roomId: 1, status: 1 });
-RedemptionSchema.index({ participantId: 1, status: 1 });
-RedemptionSchema.index({ rewardId: 1, status: 1 });
+RedemptionSchema.index({ participantId: 1, systemCreated: 1, status: 1 });
 
 export default mongoose.models.Redemption || mongoose.model<IRedemption>('Redemption', RedemptionSchema); 

@@ -4,6 +4,9 @@ import dbConnect from '@/lib/db/connection';
 import { Participant, Room, Answer, Redemption } from '@/lib/db/models';
 import { getSession } from '@/lib/auth/session';
 import { formatCurrency } from '@/lib/utils';
+import { Suspense } from 'react';
+import ParticipantStatusUpdater from '@/components/admin/ParticipantStatusUpdater';
+import { Toaster } from 'react-hot-toast';
 
 export const metadata: Metadata = {
   title: 'Participants - Islamic Trivia THR',
@@ -94,6 +97,7 @@ export default async function ParticipantsPage({
   
   return (
     <div>
+      <Toaster position="top-right" />
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Participants</h1>
         <div className="flex gap-2">
@@ -226,13 +230,20 @@ export default async function ParticipantsPage({
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        participant.thrClaimStatus === 'claimed' ? 'bg-green-100 text-green-800' : 
-                        participant.thrClaimStatus === 'processing' ? 'bg-yellow-100 text-yellow-800' : 
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {participant.thrClaimStatus.charAt(0).toUpperCase() + participant.thrClaimStatus.slice(1)}
-                      </span>
+                      <Suspense fallback={
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          participant.thrClaimStatus === 'claimed' ? 'bg-green-100 text-green-800' : 
+                          participant.thrClaimStatus === 'processing' ? 'bg-yellow-100 text-yellow-800' : 
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {participant.thrClaimStatus.charAt(0).toUpperCase() + participant.thrClaimStatus.slice(1)}
+                        </span>
+                      }>
+                        <ParticipantStatusUpdater 
+                          participantId={participant._id.toString()} 
+                          initialStatus={participant.thrClaimStatus as 'unclaimed' | 'processing' | 'claimed'} 
+                        />
+                      </Suspense>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <Link

@@ -7,7 +7,9 @@ import { Room } from '@/lib/db/models';
 import { getSession } from '@/lib/auth/session';
 import LeaderboardClient from '@/components/admin/LeaderboardClient';
 import RewardManagement from '@/components/admin/RewardManagement';
+import BatchStatusUpdater from '@/components/admin/BatchStatusUpdater';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { Toaster } from 'react-hot-toast';
 
 export const metadata: Metadata = {
   title: 'Session Monitoring - Islamic Trivia THR',
@@ -38,6 +40,7 @@ export default async function SessionPage({ params }: SessionPageProps) {
 
   return (
     <div>
+      <Toaster position="top-right" />
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Live Session</h1>
@@ -57,6 +60,7 @@ export default async function SessionPage({ params }: SessionPageProps) {
         <TabsList className="mb-4">
           <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
           <TabsTrigger value="rewards">Reward Management</TabsTrigger>
+          <TabsTrigger value="thr-status">THR Status</TabsTrigger>
         </TabsList>
         
         <TabsContent value="leaderboard">
@@ -100,6 +104,33 @@ export default async function SessionPage({ params }: SessionPageProps) {
             
             <Suspense fallback={<div className="p-6">Loading reward management...</div>}>
               <RewardManagement roomId={roomId} />
+            </Suspense>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="thr-status">
+          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
+              <h3 className="text-lg leading-6 font-medium text-gray-900">THR Claim Status Management</h3>
+              <p className="mt-1 max-w-2xl text-sm text-gray-500">
+                Update THR claim status for participants in this room
+              </p>
+            </div>
+            
+            <Suspense fallback={<div className="p-6">Loading THR status management...</div>}>
+              <div className="p-6">
+                <BatchStatusUpdater roomId={roomId} />
+                
+                <div className="mt-8">
+                  <h4 className="text-md font-medium text-gray-900 mb-4">Manual Updates</h4>
+                  <p className="text-sm text-gray-500 mb-4">
+                    To update individual participants, visit the 
+                    <Link href="/dashboard/participants" className="text-[#128C7E] hover:text-[#075E54] ml-1">
+                      Participants
+                    </Link> page and filter by this room.
+                  </p>
+                </div>
+              </div>
             </Suspense>
           </div>
         </TabsContent>

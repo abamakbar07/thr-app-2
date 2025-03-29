@@ -23,28 +23,40 @@ export function Leaderboard({ roomId, currentParticipantId, refreshInterval = 10
   
   const fetchLeaderboard = async () => {
     try {
+      console.log(`Fetching leaderboard for room ${roomId}`);
       const response = await fetch(`/api/rooms/${roomId}/leaderboard`);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch leaderboard data');
+        console.error('Failed response:', response.status, response.statusText);
+        throw new Error(`Failed to fetch leaderboard data: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log('API Response:', data);
       
-      // Debug: Log the response data to see what we're getting
-      console.log('Leaderboard API response:', data);
-      
-      // Check if data.participants exists
-      if (!data.participants || !Array.isArray(data.participants)) {
-        console.error('Invalid data format received:', data);
-        setError('Invalid data format received from server');
+      // Make sure we have data
+      if (!data || !data.participants || !Array.isArray(data.participants)) {
+        console.error('Invalid data format:', data);
+        setError('Invalid data format received');
         setIsLoading(false);
         return;
       }
       
-      // Sort by rupiah and add position
-      const sortedParticipants = data.participants
-        .sort((a: LeaderboardParticipant, b: LeaderboardParticipant) => b.totalRupiah - a.totalRupiah)
-        .map((p: LeaderboardParticipant, index: number) => ({
+      console.log(`Found ${data.participants.length} participants`);
+      
+      // Ensure all participants have totalRupiah property
+      const validParticipants = data.participants.map((p: any) => ({
+        _id: p._id || p.id || '',
+        name: p.name || 'Unknown',
+        totalRupiah: p.totalRupiah || p.score || 0,
+        avatar: p.avatar || null,
+        correctAnswers: p.correctAnswers || 0
+      }));
+      
+      // Sort and add position
+      const sortedParticipants = validParticipants
+        .sort((a: any, b: any) => b.totalRupiah - a.totalRupiah)
+        .map((p: any, index: number) => ({
           ...p,
           position: index + 1
         }));
@@ -54,29 +66,29 @@ export function Leaderboard({ roomId, currentParticipantId, refreshInterval = 10
       setIsLoading(false);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
-      setError('Failed to load leaderboard');
+      setError('Failed to load leaderboard data');
       setIsLoading(false);
     }
   };
   
   useEffect(() => {
-    console.log('Leaderboard mounting with roomId:', roomId);
+    console.log('Leaderboard component mounted with roomId:', roomId);
     fetchLeaderboard();
     
     // Set up polling for leaderboard updates
     const intervalId = setInterval(fetchLeaderboard, refreshInterval);
     
-    return () => clearInterval(intervalId);
+    return () => {
+      console.log('Cleaning up leaderboard component');
+      clearInterval(intervalId);
+    };
   }, [roomId, refreshInterval]);
   
   // Get current participant's position
   const currentParticipant = participants.find(p => p._id === currentParticipantId);
-  console.log('Current participant found:', currentParticipant, 'with ID:', currentParticipantId);
   
   if (isLoading) {
-    return (
-      <LeaderboardSkeleton />
-    );
+    return <LeaderboardSkeleton />;
   }
   
   if (error) {
@@ -84,6 +96,12 @@ export function Leaderboard({ roomId, currentParticipantId, refreshInterval = 10
       <div className="p-6 bg-white rounded-lg shadow-md">
         <h2 className="text-xl font-bold mb-4 text-center">Leaderboard</h2>
         <p className="text-red-500 text-center">{error}</p>
+        <button 
+          onClick={fetchLeaderboard}
+          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md w-full"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
@@ -128,9 +146,9 @@ export function Leaderboard({ roomId, currentParticipantId, refreshInterval = 10
             const medal = getMedalEmoji(position);
             const isCurrentUser = participant._id === currentParticipantId;
             const bgColor = isCurrentUser ? 'bg-blue-50' : 
-                             position <= 3 ? 'bg-yellow-50' : 'bg-gray-50';
+                            position <= 3 ? 'bg-yellow-50' : 'bg-gray-50';
             const borderColor = isCurrentUser ? 'border-blue-200' : 
-                                position <= 3 ? 'border-yellow-200' : 'border-gray-200';
+                              position <= 3 ? 'border-yellow-200' : 'border-gray-200';
             
             return (
               <div

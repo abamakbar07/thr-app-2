@@ -5,13 +5,15 @@ import { getSession } from '@/lib/auth/session';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { participantId: string } }
+  context: { params: { participantId: string } }
 ) {
   try {
-    // Extract participantId to handle it properly
-    const { participantId } = params;
-    
+    // Access params in an async operation first
     await dbConnect();
+    
+    // Await params before destructuring
+    const params = await context.params;
+    const { participantId } = params;
     
     // Find participant
     const participant = await Participant.findById(participantId).populate('roomId', 'name accessCode');
@@ -67,9 +69,16 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { participantId: string } }
+  context: { params: { participantId: string } }
 ) {
   try {
+    // Access params in an async operation first
+    await dbConnect();
+    
+    // Await params before destructuring
+    const params = await context.params;
+    const { participantId } = params;
+    
     // Verify admin session
     const session = await getSession();
     if (!session?.user) {
@@ -78,11 +87,6 @@ export async function PATCH(
         { status: 401 }
       );
     }
-    
-    // Extract participantId to handle it properly
-    const { participantId } = params;
-    
-    await dbConnect();
     
     // Get update data from request
     const data = await request.json();

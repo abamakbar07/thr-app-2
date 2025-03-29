@@ -1,25 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth/session';
+// import { getSession } from '@/lib/auth/session';
 import dbConnect from '@/lib/db/connection';
 import { Room, Participant, Answer } from '@/lib/db/models';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { roomId: string } }
+  context: { params: { roomId: string } }
 ) {
   try {
-    // Use params in an awaited context to follow Next.js best practices
-    const roomId = params.roomId; // This avoids the warning
-    
     await dbConnect();
     
-    // Get session but don't require it for participants
-    const session = await getSession();
+    // Await params before destructuring
+    const params = await context.params;
+    const { roomId } = params;
     
-    // Skip session check for participants viewing the leaderboard
-    // This allows both logged-in users and participants to view the leaderboard
-    
-    // Verify that room exists - don't restrict to creator only
+    // Verify that room exists
     const room = await Room.findOne({
       _id: roomId
     });
